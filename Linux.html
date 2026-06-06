@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- 引入 GSAP 用于高性能动画 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <!-- 配置 Tailwind 主题颜色 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-green': '#00ff9d',
+                        'neon-blue': '#00d0ff',
+                        'neon-purple': '#bd00ff',
+                        'dark-bg': '#050510',
+                        'glass': 'rgba(10, 10, 20, 0.6)',
+                    },
+                    fontFamily: {
+                        mono: ['"Fira Code"', '"Courier New"', 'monospace'],
+                        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neon-green': '0 0 15px #00ff9d33',
+                        'neon-blue': '0 0 15px #00d0ff33',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* 全局样式覆盖 */
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            background-color: #050510;
+            color: #ffffff;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050510;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ff9d;
+        }
+
+        /* Three.js Canvas 容器 */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: all; 
+        }
+
+        /* 玻璃拟态卡片基础 */
+        .glass-card {
+            background: rgba(20, 20, 30, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: border-color 0.3s ease;
+            overflow: hidden;
+        }
+
+        /* 3D 倾斜卡片样式 */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+            will-change: transform;
+        }
+        
+        .tilt-card-content {
+            transform: translateZ(30px);
+        }
+
+        /* 光效层 */
+        .tilt-glare {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.15), transparent 40%);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            mix-blend-mode: overlay;
+        }
+
+        .tilt-card:hover .tilt-glare {
+            opacity: 1;
+        }
+        
+        .tilt-card:hover {
+            border-color: rgba(0, 255, 157, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* 故障文字效果 */
+        .glitch-text {
+            position: relative;
+        }
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050510;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -1px 0 #ff0055;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -1px 0 #00d0ff;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(11px, 9999px, 32px, 0); }
+            20% { clip: rect(98px, 9999px, 5px, 0); }
+            40% { clip: rect(22px, 9999px, 86px, 0); }
+            60% { clip: rect(55px, 9999px, 12px, 0); }
+            80% { clip: rect(4px, 9999px, 77px, 0); }
+            100% { clip: rect(66px, 9999px, 33px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(65px, 9999px, 96px, 0); }
+            20% { clip: rect(12px, 9999px, 48px, 0); }
+            40% { clip: rect(87px, 9999px, 3px, 0); }
+            60% { clip: rect(33px, 9999px, 56px, 0); }
+            80% { clip: rect(89px, 9999px, 21px, 0); }
+            100% { clip: rect(1px, 9999px, 61px, 0); }
+        }
+
+        /* 代码块光标闪烁 */
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* 语法高亮颜色 */
+        .token-keyword { color: #ff0055; }
+        .token-string { color: #00ff9d; }
+        .token-function { color: #00d0ff; }
+        .token-comment { color: #666; font-style: italic; }
+
+        /* 目录折叠动画 */
+        .toc-toggle {
+            transition: all 0.3s ease;
+        }
+        .toc-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .toc-content.open {
+            max-height: 2000px;
+        }
+
+        /* 锚点平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* 代码块样式 */
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 16px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.75rem;
+            color: #666;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-neon-green selection:text-black">
+
+    <!-- 3D Shader 背景 -->
+    <div id="canvas-container"></div>
+
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 w-full z-50 glass-card border-b-0 border-white/10 h-16 flex items-center justify-between px-6 lg:px-12">
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-neon-green rounded-full shadow-neon-green animate-pulse"></div>
+            <span class="text-xl font-bold font-mono tracking-widest text-white">Linux<span class="text-neon-green">.BOOK</span></span>
+        </div>
+        <div class="hidden md:flex gap-8 font-mono text-sm">
+            <a href="#toc" class="hover:text-neon-green transition-colors">目录</a>
+            <a href="#chapter-1" class="hover:text-neon-blue transition-colors">第1章</a>
+            <a href="#chapter-2" class="hover:text-neon-purple transition-colors">第2章</a>
+            <a href="#chapter-3" class="hover:text-neon-blue transition-colors">第3章</a>
+        </div>
+    </nav>
+
+    <!-- 主视觉区域 -->
+    <header class="min-h-screen flex flex-col justify-center items-center relative pt-16 px-4">
+        <div class="text-center z-10 max-w-5xl">
+            <p class="font-mono text-neon-blue mb-4 tracking-[0.2em] text-sm md:text-base opacity-0 animate-up" id="tagline">
+                > SYSTEM_READY: READING_BOOK...
+            </p>
+            <h1 class="text-5xl md:text-8xl font-black mb-6 tracking-tighter leading-none opacity-0 animate-up glitch-text" data-text="THE BASICS OF Linux">
+                THE BASICS OF<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-blue">Linux</span>
+            </h1>
+            <p class="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed opacity-0 animate-up font-light">
+                一本关于Linux的基础知识的数字图书<br>
+                <span class="text-neon-green font-mono text-sm mt-2 block">Rendered in Real-time</span>
+            </p>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center opacity-0 animate-up">
+                <a href="#toc" class="group relative px-8 py-3 bg-neon-green text-black font-bold font-mono overflow-hidden">
+                    <span class="relative z-10 group-hover:text-white transition-colors duration-300">START</span>
+                    <div class="absolute inset-0 bg-black transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 ease-out"></div>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 目录部分 -->
+    <section id="toc" class="py-24 px-4 relative">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-card rounded-lg p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold font-mono text-white">目录 <span class="text-neon-green">CONTENTS</span></h2>
+                    <button id="toc-toggle" class="toc-toggle bg-neon-green/20 border border-neon-green/50 text-neon-green px-4 py-2 text-xs font-mono hover:bg-neon-green hover:text-black transition-all">
+                        [展开目录]
+                    </button>
+                </div>
+                
+                <div id="toc-content" class="toc-content">
+                    <ul class="space-y-3">
+                        <li>
+                            <a href="#chapter-1" class="flex items-center gap-3 p-3 rounded hover:bg-white/5 transition-colors group">
+                                <span class="text-neon-green font-mono text-xs">01</span>
+                                <span class="text-gray-300 group-hover:text-neon-blue transition-colors">第一章：系统架构基础</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#chapter-2" class="flex items-center gap-3 p-3 rounded hover:bg-white/5 transition-colors group">
+                                <span class="text-neon-blue font-mono text-xs">02</span>
+                                <span class="text-gray-300 group-hover:text-neon-blue transition-colors">第二章：WebGL 可视化引擎</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#chapter-3" class="flex items-center gap-3 p-3 rounded hover:bg-white/5 transition-colors group">
+                                <span class="text-neon-purple font-mono text-xs">03</span>
+                                <span class="text-gray-300 group-hover:text-neon-blue transition-colors">第三章：异步编程与性能优化</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 正文内容 -->
+    <main class="relative">
+        
+        <!-- 第一章 -->
+        <section id="chapter-1" class="py-24 px-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <!-- 文字描述 -->
+                    <div class="lg:col-span-5">
+                        <div class="glass-card rounded-lg p-8 h-full">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="text-neon-green font-mono text-xs border border-neon-green/30 px-2 py-1 rounded">CHAPTER 01</span>
+                                <span class="text-gray-500 font-mono text-xs">系统架构基础</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4">现代全栈架构设计</h3>
+                            <p class="text-gray-400 leading-relaxed mb-4">
+                                在构建高性能Web应用时，架构设计是决定系统成败的关键因素。本章将深入探讨模块化设计原则、微服务架构模式以及前后端分离的最佳实践。
+                            </p>
+                            <p class="text-gray-400 leading-relaxed mb-4">
+                                核心要点包括：清晰的职责划分、高内聚低耦合的模块设计、以及可扩展的API设计规范。通过合理的架构，我们可以确保系统在复杂业务场景下的稳定性和可维护性。
+                            </p>
+                            <p class="text-gray-400 leading-relaxed">
+                                代码示例展示了如何构建一个基础的微服务架构，包含服务注册、健康检查和请求路由等核心组件。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 代码展示 -->
+                    <div class="lg:col-span-7">
+                        <div class="glass-card rounded-lg overflow-hidden">
+                            <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/10">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span class="ml-4 text-xs text-gray-500 font-mono">microservice-arch.js</span>
+                            </div>
+                            <div class="p-6">
+                                <div class="code-block" data-lang="javascript">
+<pre><span class="token-comment">// 微服务架构核心实现</span>
+<span class="token-keyword">class</span> <span class="token-function">MicroService</span> {
+  <span class="token-function">constructor</span>(name, port) {
+    <span class="token-keyword">this</span>.name = name;
+    <span class="token-keyword">this</span>.port = port;
+    <span class="token-keyword">this</span>.healthCheck = <span class="token-function">() =></span> {
+      <span class="token-keyword">return</span> { 
+        status: <span class="token-string">'healthy'</span>, 
+        uptime: process.uptime() 
+      };
+    };
+  }
+
+  <span class="token-function">start</span>() {
+    <span class="token-keyword">const</span> server = <span class="token-function">http</span>.createServer(<span class="token-keyword">this</span>.handleRequest);
+    server.<span class="token-function">listen</span>(<span class="token-keyword">this</span>.port, () => {
+      console.<span class="token-function">log</span>(<span class="token-string">`Service ${<span class="token-keyword">this</span>.name} running on port ${<span class="token-keyword">this</span>.port}`</span>);
+    });
+  }
+
+  <span class="token-function">handleRequest</span>(req, res) {
+    res.<span class="token-function">endJSON</span>({ 
+      message: <span class="token-string">'OK'</span>, 
+      service: <span class="token-keyword">this</span>.name 
+    });
+  }
+}
+
+<span class="token-comment">// 服务注册中心</span>
+<span class="token-keyword">const</span> registry = <span class="token-keyword">new</span> <span class="token-function">ServiceRegistry</span>();
+registry.<span class="token-function">register</span>(<span class="token-keyword">new</span> <span class="token-function">MicroService</span>(<span class="token-string">'auth'</span>, 3001));
+registry.<span class="token-function">register</span>(<span class="token-keyword">new</span> <span class="token-function">MicroService</span>(<span class="token-string">'data'</span>, 3002));</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第二章 -->
+        <section id="chapter-2" class="py-24 px-4 bg-black/20">
+            <div class="max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <!-- 文字描述 -->
+                    <div class="lg:col-span-5">
+                        <div class="glass-card rounded-lg p-8 h-full">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="text-neon-blue font-mono text-xs border border-neon-blue/30 px-2 py-1 rounded">CHAPTER 02</span>
+                                <span class="text-gray-500 font-mono text-xs">WebGL 可视化</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4">实时渲染引擎设计</h3>
+                            <p class="text-gray-400 leading-relaxed mb-4">
+                                WebGL 2.0 为前端开发带来了强大的图形渲染能力。本章将详细讲解如何构建自定义渲染管线，实现高性能的 3D 可视化效果。
+                            </p>
+                            <p class="text-gray-400 leading-relaxed mb-4">
+                                重点包括：Shader 编写基础、几何体优化、纹理映射、后处理效果以及性能优化技巧。通过实战案例，展示如何创建流畅的 60fps 渲染体验。
+                            </p>
+                            <p class="text-gray-400 leading-relaxed">
+                                代码示例展示了一个基础的 WebGL 渲染器实现，包含顶点着色器和片段着色器的核心逻辑。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 代码展示 -->
+                    <div class="lg:col-span-7">
+                        <div class="glass-card rounded-lg overflow-hidden">
+                            <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/10">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span class="ml-4 text-xs text-gray-500 font-mono">webgl-renderer.js</span>
+                            </div>
+                            <div class="p-6">
+                                <div class="code-block" data-lang="javascript">
+<pre><span class="token-comment">// WebGL 渲染器核心类</span>
+<span class="token-keyword">class</span> <span class="token-function">WebGLRenderer</span> {
+  <span class="token-function">constructor</span>(canvas) {
+    <span class="token-keyword">this</span>.gl = canvas.<span class="token-function">getContext</span>(<span class="token-string">'webgl2'</span>);
+    <span class="token-keyword">this</span>.<span class="token-function">initShaders</span>();
+    <span class="token-keyword">this</span>.<span class="token-function">createBuffers</span>();
+  }
+
+  <span class="token-function">initShaders</span>() {
+    <span class="token-keyword">const</span> vsSource = `
+      <span class="token-keyword">attribute</span> vec3 aPosition;
+      <span class="token-keyword">void</span> <span class="token-function">main</span>() {
+        gl_Position = vec4(aPosition, 1.0);
+      }
+    `;
+    
+    <span class="token-keyword">const</span> fsSource = `
+      <span class="token-keyword">precision</span> mediump float;
+      <span class="token-keyword">void</span> <span class="token-function">main</span>() {
+        gl_FragColor = vec4(0.0, 1.0, 0.6, 1.0);
+      }
+    `;
+    
+    <span class="token-keyword">this</span>.program = <span class="token-keyword">this</span>.<span class="token-function">createProgram</span>(vsSource, fsSource);
+  }
+
+  <span class="token-function">render</span>(vertices) {
+    <span class="token-keyword">this</span>.gl.<span class="token-function">clearColor</span>(0.0, 0.0, 0.0, 1.0);
+    <span class="token-keyword">this</span>.gl.<span class="token-function">clear</span>(gl.COLOR_BUFFER_BIT);
+    <span class="token-keyword">this</span>.gl.<span class="token-function">useProgram</span>(<span class="token-keyword">this</span>.program);
+    <span class="token-keyword">this</span>.gl.<span class="token-function">bufferData</span>(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    <span class="token-keyword">this</span>.gl.<span class="token-function">drawArrays</span>(gl.TRIANGLES, 0, 3);
+  }
+}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第三章 -->
+        <section id="chapter-3" class="py-24 px-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <!-- 文字描述 -->
+                    <div class="lg:col-span-5">
+                        <div class="glass-card rounded-lg p-8 h-full">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span class="text-neon-purple font-mono text-xs border border-neon-purple/30 px-2 py-1 rounded">CHAPTER 03</span>
+                                <span class="text-gray-500 font-mono text-xs">性能优化</span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4">异步编程与优化策略</h3>
+                            <p class="text-gray-400 leading-relaxed mb-4">
+                                异步编程是现代Web开发的核心技能。本章深入探讨 Promise、async/await 的高级用法，以及如何避免常见的性能陷阱。
+                            </p>
+                            <p class="text-gray-400 leading-relaxed mb-4">
+                                重点包括：并发控制、错误处理、资源清理、以及虚拟滚动等性能优化技术。通过实际案例展示如何构建响应迅速的用户界面。
+                            </p>
+                            <p class="text-gray-400 leading-relaxed">
+                                代码示例展示了一个高性能的异步任务调度器实现。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 代码展示 -->
+                    <div class="lg:col-span-7">
+                        <div class="glass-card rounded-lg overflow-hidden">
+                            <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/10">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                <span class="ml-4 text-xs text-gray-500 font-mono">async-optimizer.js</span>
+                            </div>
+                            <div class="p-6">
+                                <div class="code-block" data-lang="javascript">
+<pre><span class="token-comment">// 异步任务调度器</span>
+<span class="token-keyword">class</span> <span class="token-function">TaskScheduler</span> {
+  <span class="token-function">constructor</span>(concurrency = 3) {
+    <span class="token-keyword">this</span>.concurrency = concurrency;
+    <span class="token-keyword">this</span>.queue = [];
+    <span class="token-keyword">this</span>.running = 0;
+  }
+
+  <span class="token-function">async</span> <span class="token-function">schedule</span>(task) {
+    <span class="token-keyword">return new</span> <span class="token-function">Promise</span>((resolve, reject) => {
+      <span class="token-keyword">this</span>.queue.<span class="token-function">push</span>({ task, resolve, reject });
+      <span class="token-keyword">this</span>.<span class="token-function">process</span>();
+    });
+  }
+
+  <span class="token-keyword">async</span> <span class="token-function">process</span>() {
+    <span class="token-keyword">while</span> (<span class="token-keyword">this</span>.running < 3 && <span class="token-keyword">this</span>.queue.length > 0) {
+      <span class="token-keyword">const</span> { task, resolve, reject } = <span class="token-keyword">this</span>.queue.<span class="token-function">shift</span>();
+      <span class="token-keyword">this</span>.running++;
+      
+      <span class="token-keyword">try</span> {
+        <span class="token-keyword">const</span> result = <span class="token-keyword">await</span> task();
+        resolve(result);
+      } <span class="token-keyword">catch</span> (error) {
+        reject(error);
+      } <span class="token-keyword">finally</span> {
+        <span class="token-keyword">this</span>.running--;
+      }
+    }
+  }
+}
+
+<span class="token-comment">// 使用示例</span>
+<span class="token-keyword">const</span> scheduler = <span class="token-keyword">new</span> <span class="token-function">TaskScheduler</span>(3);
+<span class="token-keyword">const</span> results = <span class="token-keyword">await</span> <span class="token-function">Promise</span>.<span class="token-function">all</span>(
+  tasks.<span class="token-function">map</span>(task => scheduler.<span class="token-function">schedule</span>(task))
+);</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/10 bg-black/80 backdrop-blur-md relative z-10">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-6 md:mb-0">
+                <h4 class="font-mono text-2xl font-bold text-white">Linux<span class="text-neon-green">.BOOK</span></h4>
+                <p class="text-gray-500 text-sm mt-2">Code is Law. Read for Open.</p>
+            </div>
+        </div>
+        <div class="text-center mt-12 text-xs text-gray-600 font-mono">
+            © 2026. DESIGNED BY AI.
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. Three.js Shader Background Setup ---
+        const canvasContainer = document.getElementById('canvas-container');
+        
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050510, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        canvasContainer.appendChild(renderer.domElement);
+
+        // Shader Geometry
+        const geometry = new THREE.PlaneGeometry(20, 20, 64, 64);
+
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uColor1: { value: new THREE.Color(0x00ff9d) }, 
+                uColor2: { value: new THREE.Color(0x00d0ff) }, 
+                uMouse: { value: new THREE.Vector2(0, 0) }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying float vElevation;
+                uniform float uTime;
+                uniform vec2 uMouse;
+
+                void main() {
+                    vUv = uv;
+                    
+                    vec3 pos = position;
+                    
+                    float elevation = sin(pos.x * 2.0 + uTime) * 0.2;
+                    elevation += sin(pos.y * 1.5 + uTime * 0.8) * 0.2;
+                    
+                    float dist = distance(uv, uMouse);
+                    elevation += smoothstep(0.5, 0.0, dist) * 0.3 * sin(uTime * 3.0);
+
+                    pos.z += elevation;
+                    vElevation = elevation;
+
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                }
+            `,
+            fragmentShader: `
+                varying vec2 vUv;
+                varying float vElevation;
+                uniform vec3 uColor1;
+                uniform vec3 uColor2;
+
+                void main() {
+                    float mixStrength = (vElevation + 0.3) * 1.5;
+                    vec3 color = mix(uColor2, uColor1, mixStrength);
+                    
+                    float grid = step(0.98, fract(vUv.x * 20.0)) + step(0.98, fract(vUv.y * 20.0));
+                    color += vec3(grid) * 0.3;
+
+                    float alpha = 1.0 - distance(vUv, vec2(0.5));
+                    
+                    gl_FragColor = vec4(color, alpha * 0.8); 
+                }
+            `,
+            transparent: true,
+            wireframe: true
+        });
+
+        const plane = new THREE.Mesh(geometry, material);
+        scene.add(plane);
+        plane.rotation.x = -Math.PI * 0.25;
+
+        // Particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 500;
+        const posArray = new Float32Array(particlesCount * 3);
+        
+        for(let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 15;
+        }
+        
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.02,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.5
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        camera.position.z = 5;
+
+        // --- 2. Interaction Logic ---
+        
+        let mouseX = 0;
+        let mouseY = 0;
+
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - windowHalfX) / 100;
+            mouseY = (event.clientY - windowHalfY) / 100;
+            
+            material.uniforms.uMouse.value.x = event.clientX / window.innerWidth;
+            material.uniforms.uMouse.value.y = 1.0 - (event.clientY / window.innerHeight);
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            const elapsedTime = clock.getElapsedTime();
+
+            plane.rotation.z += 0.001;
+            particlesMesh.rotation.y = elapsedTime * 0.05;
+
+            material.uniforms.uTime.value = elapsedTime;
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 3. GSAP Animations ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Hero Animations
+        gsap.utils.toArray('.animate-up').forEach((elem, i) => {
+            gsap.to(elem, {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                delay: 0.5 + (i * 0.2),
+                ease: 'power3.out'
+            });
+        });
+
+        // 目录动画
+        gsap.from("#toc", {
+            scrollTrigger: {
+                trigger: "#toc",
+                start: "top 80%",
+            },
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out"
+        });
+
+        // 章节动画
+        gsap.utils.toArray('[id^="chapter-"]').forEach((section) => {
+            gsap.from(section.querySelector('.glass-card'), {
+                scrollTrigger: {
+                    trigger: section,
+                    start: "top 70%",
+                },
+                y: 80,
+                opacity: 0,
+                duration: 1,
+                ease: "power3.out"
+            });
+        });
+
+        // --- 4. 目录折叠功能 ---
+        const tocToggle = document.getElementById('toc-toggle');
+        const tocContent = document.getElementById('toc-content');
+
+        tocToggle.addEventListener('click', () => {
+            tocContent.classList.toggle('open');
+            tocToggle.textContent = tocContent.classList.contains('open') 
+                ? '[收起目录]' 
+                : '[展开目录]';
+        });
+
+        // --- 5. 3D Tilt Logic (移除原有卡片的 tilt，保留背景效果) ---
+
+        // --- 6. 代码高亮增强 ---
+        document.querySelectorAll('.code-block pre').forEach(block => {
+            // 已经有语法高亮
+        });
+
+    </script>
+</body>
+</html>
