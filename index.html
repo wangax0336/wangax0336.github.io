@@ -1,1648 +1,731 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Blog - WAX</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg-primary: #0a0a0c;
-            --bg-secondary: #12121a;
-            --bg-card: #16161f;
-            --text-primary: #f0f0f2;
-            --text-secondary: #9a9aa8;
-            --accent-gold: #d4a853;
-            --accent-cyan: #4ecdc4;
-            --accent-coral: #e07a5f;
-            --gradient-warm: linear-gradient(135deg, #d4a853 0%, #e07a5f 100%);
-            --gradient-cool: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-
-        /* 导航栏 */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(10, 10, 12, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-        }
-
-        nav.scrolled {
-            padding: 0.7rem 2rem;
-            background: rgba(10, 10, 12, 0.95);
-        }
-
-        .logo {
-            font-size: 1.4rem;
-            font-weight: 700;
-            background: var(--gradient-warm);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            position: relative;
-            transition: color 0.3s ease;
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: var(--gradient-warm);
-            transition: width 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            color: var(--text-primary);
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Hero区域 */
-        #hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            padding: 6rem 2rem 4rem;
-            overflow: hidden;
-        }
-
-        #signalCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            max-width: 900px;
-        }
-
-        .hero-tag {
-            display: inline-block;
-            padding: 0.5rem 1.2rem;
-            border: 1px solid var(--accent-gold);
-            border-radius: 30px;
-            font-size: 0.85rem;
-            color: var(--accent-gold);
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            animation: fadeInUp 0.8s ease forwards;
-            opacity: 0;
-        }
-
-        .hero-title {
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            animation: fadeInUp 0.8s ease 0.2s forwards;
-            opacity: 0;
-        }
-
-        .hero-title .highlight {
-            background: var(--gradient-warm);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-subtitle {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto 2.5rem;
-            animation: fadeInUp 0.8s ease 0.4s forwards;
-            opacity: 0;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            animation: fadeInUp 0.8s ease 0.6s forwards;
-            opacity: 0;
-        }
-
-        .btn {
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            background: var(--gradient-warm);
-            color: var(--bg-primary);
-            border: none;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(212, 168, 83, 0.3);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-primary);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            transform: translateY(-3px);
-        }
-
-        /* 通用区块样式 */
-        section {
-            padding: 6rem 2rem;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        .section-tag {
-            font-size: 0.85rem;
-            color: var(--accent-cyan);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .section-title {
-            font-size: clamp(2rem, 4vw, 2.8rem);
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .section-desc {
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* 精选文章 */
-        .articles-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .article-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.4s ease;
-            position: relative;
-            transform-style: preserve-3d;
-            perspective: 1000px;
-        }
-
-        .article-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(212, 168, 83, 0.1) 0%, rgba(78, 205, 196, 0.1) 100%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .article-card:hover {
-            transform: translateY(-10px) rotateX(2deg);
-            border-color: rgba(212, 168, 83, 0.3);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        }
-
-        .article-card:hover::before {
-            opacity: 1;
-        }
-
-        .article-media {
-            height: 200px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .article-media canvas {
-            width: 100%;
-            height: 100%;
-        }
-
-        .article-media img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s ease;
-        }
-
-        .article-card:hover .article-media img {
-            transform: scale(1.05);
-        }
-
-        .article-content {
-            padding: 1.5rem;
-            position: relative;
-            z-index: 2;
-        }
-
-        .article-meta {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.8rem;
-        }
-
-        .article-tag {
-            font-size: 0.75rem;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            background: rgba(212, 168, 83, 0.15);
-            color: var(--accent-gold);
-        }
-
-        .article-date {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .article-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 0.8rem;
-            transition: color 0.3s ease;
-        }
-
-        .article-card:hover .article-title {
-            color: var(--accent-gold);
-        }
-
-        .article-excerpt {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        /* 实验板块 */
-        #experiments {
-            background: var(--bg-secondary);
-            max-width: 100%;
-            padding: 6rem 2rem;
-        }
-
-        #experiments .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .experiments-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .experiment-card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.4s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .experiment-card::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(78, 205, 196, 0.1) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            pointer-events: none;
-        }
-
-        .experiment-card:hover::after {
-            opacity: 1;
-        }
-
-        .experiment-card:hover {
-            transform: scale(1.02);
-            border-color: var(--accent-cyan);
-        }
-
-        .experiment-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .experiment-card:nth-child(1) .experiment-icon {
-            background: linear-gradient(135deg, rgba(212, 168, 83, 0.2), rgba(224, 122, 95, 0.2));
-        }
-
-        .experiment-card:nth-child(2) .experiment-icon {
-            background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(68, 160, 141, 0.2));
-        }
-
-        .experiment-card:nth-child(3) .experiment-icon {
-            background: linear-gradient(135deg, rgba(224, 122, 95, 0.2), rgba(212, 168, 83, 0.2));
-        }
-
-        .experiment-card:nth-child(4) .experiment-icon {
-            background: linear-gradient(135deg, rgba(68, 160, 141, 0.2), rgba(78, 205, 196, 0.2));
-        }
-
-        .experiment-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.8rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .experiment-desc {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .experiment-tech {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-            position: relative;
-            z-index: 1;
-        }
-
-        .tech-badge {
-            font-size: 0.7rem;
-            padding: 0.3rem 0.7rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-            color: var(--text-secondary);
-        }
-
-        /* 交互演示区 */
-        #interactive-demo {
-            position: relative;
-        }
-
-        .demo-container {
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .demo-header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .demo-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .demo-controls {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .demo-btn {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .demo-btn:hover {
-            transform: scale(1.2);
-        }
-
-        .demo-btn.close { background: #e07a5f; }
-        .demo-btn.minimize { background: #d4a853; }
-        .demo-btn.maximize { background: #4ecdc4; }
-
-        #demoCanvas {
-            width: 100%;
-            height: 400px;
-            display: block;
-            cursor: crosshair;
-        }
-
-        .demo-footer {
-            padding: 1rem 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        /* 时间线 */
-        #timeline {
-            background: var(--bg-secondary);
-            max-width: 100%;
-            padding: 6rem 2rem;
-        }
-
-        #timeline .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .timeline-wrapper {
-            position: relative;
-            padding-left: 3rem;
-        }
-
-        .timeline-wrapper::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(to bottom, var(--accent-gold), var(--accent-cyan));
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 3rem;
-            padding-left: 2rem;
-            opacity: 0;
-            transform: translateX(-20px);
-            transition: all 0.6s ease;
-        }
-
-        .timeline-item.visible {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -3rem;
-            top: 0.5rem;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--bg-primary);
-            border: 3px solid var(--accent-gold);
-            transition: all 0.3s ease;
-        }
-
-        .timeline-item:hover::before {
-            transform: scale(1.3);
-            box-shadow: 0 0 20px rgba(212, 168, 83, 0.5);
-        }
-
-        .timeline-year {
-            font-size: 0.85rem;
-            color: var(--accent-cyan);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .timeline-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .timeline-desc {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-
-        /* 联系表单 */
-        #contact .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .contact-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: start;
-        }
-
-        .contact-info h3 {
-            font-size: 1.8rem;
-            margin-bottom: 1rem;
-        }
-
-        .contact-info p {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-        }
-
-        .contact-links {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .contact-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .contact-link:hover {
-            color: var(--accent-gold);
-        }
-
-        .contact-link svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .contact-form {
-            background: var(--bg-card);
-            padding: 2.5rem;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 1rem;
-            background: var(--bg-secondary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--accent-gold);
-            box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.1);
-        }
-
-        .form-group textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 1rem;
-            background: var(--gradient-warm);
-            border: none;
-            border-radius: 8px;
-            color: var(--bg-primary);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(212, 168, 83, 0.3);
-        }
-
-        /* 页脚 */
-        footer {
-            background: var(--bg-secondary);
-            padding: 4rem 2rem 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .footer-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 3rem;
-            margin-bottom: 3rem;
-        }
-
-        .footer-section h4 {
-            font-size: 1rem;
-            margin-bottom: 1.5rem;
-            color: var(--text-primary);
-        }
-
-        .footer-section p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            line-height: 1.8;
-        }
-
-        .footer-links {
-            list-style: none;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.8rem;
-        }
-
-        .footer-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-        }
-
-        .footer-links a:hover {
-            color: var(--accent-gold);
-        }
-
-        .inspiration-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .inspiration-tag {
-            padding: 0.4rem 0.9rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .inspiration-tag:hover {
-            background: rgba(78, 205, 196, 0.2);
-            color: var(--accent-cyan);
-        }
-
-        .footer-bottom {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .footer-bottom p {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .social-links {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .social-links a {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-        }
-
-        .social-links a:hover {
-            background: var(--accent-gold);
-            color: var(--bg-primary);
-            transform: translateY(-3px);
-        }
-
-        /* 动画 */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .reveal {
-            opacity: 0;
-            transform: translateY(40px);
-            transition: all 0.8s ease;
-        }
-
-        .reveal.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* 鼠标粒子容器 */
-        #mouseParticles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-        }
-
-        /* 响应式 */
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-
-            .contact-wrapper {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-
-            .articles-grid {
-                grid-template-columns: 1fr;
-            }
-
-            section {
-                padding: 4rem 1.5rem;
-            }
-        }
-
-        /* 自定义滚动条 */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(var(--accent-gold), var(--accent-cyan));
-            border-radius: 4px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAX · 个人博客</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>tailwind.config={theme:{extend:{fontFamily:{inter:['Inter','sans-serif']}}}}</script>
+<style>
+:root,[data-theme="dark"]{
+  --bg-primary:#020617;--bg-secondary:rgba(15,23,42,0.95);--bg-glass:rgba(255,255,255,0.03);
+  --bg-glass-hover:rgba(255,255,255,0.06);--bg-card:rgba(15,23,42,0.6);--bg-input:rgba(30,41,59,0.6);
+  --border-glass:rgba(255,255,255,0.08);--border-glass-hover:rgba(255,255,255,0.15);
+  --text-primary:#f8fafc;--text-secondary:#94a3b8;--text-muted:#64748b;--text-tag:#a5b4fc;
+  --accent:#6366f1;--accent-light:rgba(99,102,241,0.15);--accent-glow:rgba(99,102,241,0.15);
+  --scrollbar-track:#0f172a;--scrollbar-thumb:#334155;
+  --overlay:rgba(0,0,0,0.5);--nav-bg:rgba(2,6,23,0.8);
+  --shadow-card:0 25px 50px -12px rgba(0,0,0,0.4);--particle-c:148,163,184;--particle-l:99,102,241;
+  --gradient-hero:radial-gradient(circle,rgba(99,102,241,0.15) 0%,transparent 70%);
+  --flip-back:rgba(15,23,42,0.92);--badge-bg:rgba(99,102,241,0.15);
+}
+[data-theme="light"]{
+  --bg-primary:#f8fafc;--bg-secondary:rgba(255,255,255,0.95);--bg-glass:rgba(15,23,42,0.03);
+  --bg-glass-hover:rgba(15,23,42,0.06);--bg-card:rgba(241,245,249,0.8);--bg-input:rgba(226,232,240,0.6);
+  --border-glass:rgba(15,23,42,0.08);--border-glass-hover:rgba(15,23,42,0.15);
+  --text-primary:#0f172a;--text-secondary:#475569;--text-muted:#94a3b8;--text-tag:#6366f1;
+  --accent:#6366f1;--accent-light:rgba(99,102,241,0.1);--accent-glow:rgba(99,102,241,0.08);
+  --scrollbar-track:#f1f5f9;--scrollbar-thumb:#cbd5e1;
+  --overlay:rgba(0,0,0,0.2);--nav-bg:rgba(248,250,252,0.85);
+  --shadow-card:0 25px 50px -12px rgba(0,0,0,0.1);--particle-c:100,116,139;--particle-l:99,102,241;
+  --gradient-hero:radial-gradient(circle,rgba(99,102,241,0.08) 0%,transparent 70%);
+  --flip-back:rgba(241,245,249,0.95);--badge-bg:rgba(99,102,241,0.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);overflow-x:hidden;transition:background .4s,color .4s}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--scrollbar-track)}::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:3px}
+
+/* 侧边栏 */
+.sidebar{position:fixed;top:0;left:0;width:280px;height:100vh;background:var(--bg-secondary);backdrop-filter:blur(20px);border-right:1px solid var(--border-glass);transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);z-index:100;overflow-y:auto}
+.sidebar.open{transform:translateX(0)}
+.sidebar-overlay{position:fixed;inset:0;background:var(--overlay);opacity:0;pointer-events:none;transition:opacity .35s;z-index:99}
+.sidebar-overlay.active{opacity:1;pointer-events:auto}
+.sub-menu{max-height:0;overflow:hidden;transition:max-height .3s ease}.sub-menu.expanded{max-height:600px}
+.menu-arrow{transition:transform .3s ease}.menu-arrow.rotated{transform:rotate(180deg)}
+.sidebar-link{position:relative;transition:all .2s;color:var(--text-secondary)}
+.sidebar-link::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:0;background:var(--accent);border-radius:2px;transition:height .2s}
+.sidebar-link:hover::before,.sidebar-link.active::before{height:60%}
+.sidebar-link:hover,.sidebar-link.active{color:var(--text-primary);background:var(--accent-light)}
+.sub-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:8px;font-size:.75rem;color:var(--text-muted);transition:all .2s;cursor:pointer;position:relative}
+.sub-item::before{content:'';position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:2px;height:0;background:var(--accent);border-radius:1px;transition:height .2s}
+.sub-item:hover::before,.sub-item.active::before{height:50%}
+.sub-item:hover,.sub-item.active{color:var(--text-primary);background:var(--accent-light)}
+.sub-item .sub-icon{opacity:.5;transition:opacity .2s}
+.sub-item:hover .sub-icon,.sub-item.active .sub-icon{opacity:1}
+
+.glass{background:var(--bg-glass);backdrop-filter:blur(16px);border:1px solid var(--border-glass);transition:background .4s,border-color .4s}
+.gradient-text{background:linear-gradient(to bottom right,var(--text-primary),var(--text-secondary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.gradient-text-cyan{background:linear-gradient(to right,#06b6d4,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+.reveal{opacity:0;transform:translateY(40px) scale(.97);transition:all .8s cubic-bezier(.4,0,.2,1)}.reveal.visible{opacity:1;transform:translateY(0) scale(1)}
+.reveal-left{opacity:0;transform:translateX(-50px);transition:all .8s cubic-bezier(.4,0,.2,1)}.reveal-left.visible{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(50px);transition:all .8s cubic-bezier(.4,0,.2,1)}.reveal-right.visible{opacity:1;transform:translateX(0)}
+.pop-in{opacity:0;transform:scale(.8);transition:all .6s cubic-bezier(.34,1.56,.64,1)}.pop-in.visible{opacity:1;transform:scale(1)}
+
+.tag{background:var(--badge-bg);color:var(--text-tag);font-size:.7rem;padding:2px 8px;border-radius:9999px;transition:background .3s,color .3s}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+
+.card-flip{perspective:1200px}.card-flip-inner{transition:transform .7s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}.card-flip:hover .card-flip-inner{transform:rotateY(180deg)}
+.card-front,.card-back{backface-visibility:hidden;position:absolute;inset:0}.card-back{transform:rotateY(180deg)}
+.flip-card{perspective:1200px;cursor:pointer}.flip-card-inner{transition:transform .7s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;position:relative}
+.flip-card:hover .flip-card-inner{transform:rotateY(180deg)}
+.flip-card-front,.flip-card-back{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flip-card-back{position:absolute;inset:0;transform:rotateY(180deg);background:var(--flip-back);backdrop-filter:blur(16px);border-radius:1rem;overflow:hidden}
+
+.typewriter{border-right:2px solid var(--accent);animation:blink-caret .75s step-end infinite}
+@keyframes blink-caret{from,to{border-color:transparent}50%{border-color:var(--accent)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}.float-anim{animation:float 6s ease-in-out infinite}
+@keyframes float-reverse{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}.float-anim-reverse{animation:float-reverse 7s ease-in-out infinite}
+
+.ripple{position:relative;overflow:hidden}
+.ripple-effect{position:absolute;border-radius:50%;background:rgba(255,255,255,.2);transform:scale(0);animation:ripple-anim .6s ease-out}
+[data-theme="light"] .ripple-effect{background:rgba(99,102,241,.15)}
+@keyframes ripple-anim{to{transform:scale(4);opacity:0}}
+
+#particle-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.hero-glow{position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:600px;background:var(--gradient-hero);pointer-events:none;transition:background .4s}
+
+.add-btn{border:1px dashed var(--border-glass);color:var(--text-muted);transition:all .3s;cursor:pointer}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.theme-toggle-icon{transition:transform .4s}.theme-toggle-icon.rotate{transform:rotate(360deg)}
+.sidebar::-webkit-scrollbar{width:4px}.sidebar::-webkit-scrollbar-track{background:transparent}.sidebar::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:2px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 24px;border-radius:12px;font-size:.85rem;z-index:200;background:var(--accent);color:#fff;opacity:0;transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.cursor-glow{position:fixed;width:500px;height:500px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,rgba(99,102,241,.07) 0%,transparent 70%);transform:translate(-50%,-50%);transition:opacity .3s}
+.shimmer{position:relative;overflow:hidden}
+.shimmer::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);animation:shimmer-move 3s infinite}
+@keyframes shimmer-move{0%{left:-100%}100%{left:200%}}
+.magnetic-btn{transition:transform .2s ease-out}
+.breathe{animation:breathe 4s ease-in-out infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 0 30px 5px rgba(99,102,241,.15)}}
+.parallax-shape{transition:transform .1s ease-out}
+.hero-title-wrap{position:relative;display:inline-block}
+.hero-title-wrap::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);animation:hero-sweep 4s ease-in-out infinite;pointer-events:none}
+@keyframes hero-sweep{0%{left:-100%}50%{left:150%}100%{left:150%}}
+.gradient-flow{background:linear-gradient(90deg,var(--accent),#06b6d4,#a855f7,var(--accent));background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradient-shift 6s ease infinite}
+@keyframes gradient-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.char-reveal .char{opacity:0;transform:translateY(30px) rotateX(-40deg);display:inline-block;transition:all .5s cubic-bezier(.4,0,.2,1)}
+.char-reveal.visible .char{opacity:1;transform:translateY(0) rotateX(0)}
+.flip-card-back::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(99,102,241,.06),transparent,transparent);animation:flip-glow-spin 6s linear infinite;pointer-events:none}
+@keyframes flip-glow-spin{to{transform:rotate(360deg)}}
+.namecard-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.namecard-particles span{position:absolute;width:2px;height:2px;background:var(--accent);border-radius:50%;opacity:.3;animation:namecard-float 8s infinite}
+@keyframes namecard-float{0%{transform:translateY(100%) scale(0);opacity:0}50%{opacity:.4}100%{transform:translateY(-100%) scale(1);opacity:0}}
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.2;position:relative;overflow:hidden}
+.section-divider::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:divider-sweep 5s ease-in-out infinite}
+@keyframes divider-sweep{0%{left:-100%}50%{left:200%}100%{left:200%}}
+@keyframes stat-bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.section-line{width:60px;height:3px;background:linear-gradient(to right,var(--accent),#a855f7);border-radius:2px;margin:0 auto 1rem}
+.add-btn-pulse{animation:add-pulse 2s ease-in-out infinite}
+@keyframes add-pulse{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 0 0 8px rgba(99,102,241,.08)}}
+
+/* 侧边栏信息卡片 */
+.sidebar-info-card{background:var(--accent-light);border:1px solid rgba(99,102,241,.1);border-radius:12px;padding:12px;transition:all .3s}
+.sidebar-info-card:hover{border-color:rgba(99,102,241,.25)}
+.sidebar-stat{text-align:center;padding:6px 0}
+.sidebar-stat-num{font-size:1.1rem;font-weight:700;color:var(--accent)}
+.sidebar-stat-label{font-size:.6rem;color:var(--text-muted);margin-top:2px}
+
+/* 侧边栏分隔 */
+.sidebar-divider{height:1px;background:var(--border-glass);margin:16px 0}
+
+@media(max-width:374px){
+  .sidebar{width:260px}
+  .hero-title-font{font-size:1.75rem!important}
+  .section-title-font{font-size:1.5rem!important}
+  .card-grid-articles,.card-grid-works,.about-grid{grid-template-columns:1fr!important}
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+  .nav-title{display:none!important}
+  .cta-buttons{flex-direction:column!important;width:100%!important}
+  .cta-buttons a{width:100%!important;justify-content:center!important}
+}
+@media(min-width:375px) and (max-width:639px){
+  .hero-title-font{font-size:2rem!important}
+  .section-title-font{font-size:1.75rem!important}
+  .card-grid-articles,.card-grid-works,.about-grid{grid-template-columns:1fr!important}
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+  .nav-title{display:none!important}
+  .cta-buttons{flex-direction:column!important;width:100%!important}
+  .cta-buttons a{width:100%!important;justify-content:center!important}
+}
+@media(min-width:640px) and (max-width:767px){
+  .hero-title-font{font-size:2.5rem!important}
+  .section-title-font{font-size:2rem!important}
+  .card-grid-articles{grid-template-columns:repeat(2,1fr)!important}
+  .card-grid-works,.about-grid{grid-template-columns:1fr!important}
+  .stats-grid{grid-template-columns:repeat(4,1fr)!important}
+}
+@media(min-width:768px) and (max-width:1023px){
+  .hero-title-font{font-size:3.5rem!important}
+  .section-title-font{font-size:2.5rem!important}
+  .card-grid-articles{grid-template-columns:repeat(2,1fr)!important}
+  .about-grid{grid-template-columns:repeat(3,1fr)!important}
+  .stats-grid{grid-template-columns:repeat(4,1fr)!important}
+}
+@media(min-width:1024px){
+  .hero-title-font{font-size:4.5rem!important}
+  .card-grid-articles{grid-template-columns:repeat(3,1fr)!important}
+  .card-grid-works{grid-template-columns:repeat(2,1fr)!important}
+}
+@media(hover:none){.cursor-glow{display:none!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(max-width:639px){.namecard-min-h{min-height:340px!important}.namecard-inner-h{min-height:340px!important}.flip-article-h{min-height:300px!important}.flip-work-h{min-height:340px!important}.flip-article-img{height:180px!important}.flip-work-img{height:200px!important}}
+@media(min-width:640px) and (max-width:1023px){.flip-article-h{min-height:320px!important}.flip-work-h{min-height:380px!important}}
+@media(max-width:639px){.footer-inner{flex-direction:column!important;text-align:center!important;gap:1rem!important}}
+</style>
 </head>
 <body>
-    <!-- 鼠标粒子容器 -->
-    <canvas id="mouseParticles"></canvas>
 
-    <!-- 导航栏 -->
-    <nav>
-        <div class="logo">Personal Blog</div>
-        <ul class="nav-links">
-            <li><a href="#hero">首页</a></li>
-            <li><a href="#articles">创意</a></li>
-            <li><a href="#experiments">实验</a></li>
-            <li><a href="#timeline">历程</a></li>
-            <li><a href="#contact">联系</a></li>
-        </ul>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="toast" id="toast"></div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ========== 侧边栏 ========== -->
+<aside class="sidebar" id="sidebar">
+  <div class="p-5 sm:p-6">
+    <!-- 头部 -->
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm breathe">W</div>
+        <div>
+          <div class="font-semibold text-sm" style="color:var(--text-primary)">WAX Blog</div>
+          <div class="text-[10px]" style="color:var(--text-muted)">思考 · 记录 · 分享</div>
+        </div>
+      </div>
+      <button onclick="toggleSidebar()" style="color:var(--text-muted)" class="hover:opacity-80 transition-opacity p-1">
+        <span class="iconify" data-icon="lucide:x" data-width="20"></span>
+      </button>
+    </div>
+
+    <!-- 搜索 -->
+    <div class="relative mb-5">
+      <span class="iconify absolute left-3 top-1/2 -translate-y-1/2" style="color:var(--text-muted)" data-icon="lucide:search" data-width="16"></span>
+      <input type="text" placeholder="搜索文章或作品..." style="background:var(--bg-input);border:1px solid var(--border-glass);color:var(--text-primary)" class="w-full rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none transition-colors" onfocus="this.style.borderColor='rgba(99,102,241,0.5)'" onblur="this.style.borderColor='var(--border-glass)'">
+    </div>
+
+    <!-- 信息卡片 -->
+    <div class="sidebar-info-card mb-5">
+      <div class="flex items-center gap-3 mb-3">
+        <img src="https://picsum.photos/seed/wax-avatar/80/80.jpg" class="w-10 h-10 rounded-xl object-cover border border-indigo-500/20" alt="头像">
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-sm truncate" style="color:var(--text-primary)">WAX</div>
+          <div class="text-[10px] flex items-center gap-1" style="color:var(--text-muted)"><span class="iconify" data-icon="lucide:map-pin" data-width="10"></span>杭州</div>
+        </div>
+        <div class="status-dot flex-shrink-0"></div>
+      </div>
+      <div class="grid grid-cols-3 gap-1">
+        <div class="sidebar-stat"><div class="sidebar-stat-num">0</div><div class="sidebar-stat-label">文章</div></div>
+        <div class="sidebar-stat"><div class="sidebar-stat-num">0</div><div class="sidebar-stat-label">作品</div></div>
+        <div class="sidebar-stat"><div class="sidebar-stat-num">-</div><div class="sidebar-stat-label">天</div></div>
+      </div>
+    </div>
+
+    <!-- 导航菜单 -->
+    <div class="text-[10px] font-medium uppercase tracking-widest mb-2 px-3" style="color:var(--text-muted)">导航</div>
+    <nav class="space-y-0.5 mb-4">
+      <a href="#hero" data-section="hero" onclick="navClick('hero')" class="sidebar-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm">
+        <span class="iconify" data-icon="lucide:home" data-width="18"></span> 首页
+      </a>
+
+      <div>
+        <button onclick="toggleSubMenu('articles-menu',this)" class="sidebar-link flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm" data-section="articles">
+          <span class="flex items-center gap-3"><span class="iconify" data-icon="lucide:book-open" data-width="18"></span> 文章</span>
+          <span class="iconify menu-arrow" data-icon="lucide:chevron-down" data-width="14"></span>
+        </button>
+        <div id="articles-menu" class="sub-menu pl-6 space-y-0.5 mt-0.5">
+          <span class="sub-item active" data-sub="articles" onclick="subClick('articles','')">
+            <span class="iconify sub-icon" data-icon="lucide:layers" data-width="14"></span>全部文章
+          </span>
+          <span class="sub-item" data-sub="articles" onclick="subClick('articles','frontend')">
+            <span class="iconify sub-icon" data-icon="lucide:code-2" data-width="14"></span>前端开发
+          </span>
+          <span class="sub-item" data-sub="articles" onclick="subClick('articles','creative')">
+            <span class="iconify sub-icon" data-icon="lucide:sparkles" data-width="14"></span>创意编程
+          </span>
+          <span class="sub-item" data-sub="articles" onclick="subClick('articles','design')">
+            <span class="iconify sub-icon" data-icon="lucide:pen-tool" data-width="14"></span>交互设计
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <button onclick="toggleSubMenu('works-menu',this)" class="sidebar-link flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm" data-section="works">
+          <span class="flex items-center gap-3"><span class="iconify" data-icon="lucide:palette" data-width="18"></span> 作品</span>
+          <span class="iconify menu-arrow" data-icon="lucide:chevron-down" data-width="14"></span>
+        </button>
+        <div id="works-menu" class="sub-menu pl-6 space-y-0.5 mt-0.5">
+          <span class="sub-item active" data-sub="works" onclick="subClick('works','')">
+            <span class="iconify sub-icon" data-icon="lucide:layers" data-width="14"></span>全部作品
+          </span>
+          <span class="sub-item" data-sub="works" onclick="subClick('works','interactive')">
+            <span class="iconify sub-icon" data-icon="lucide:mouse-pointer-click" data-width="14"></span>交互实验
+          </span>
+          <span class="sub-item" data-sub="works" onclick="subClick('works','visual')">
+            <span class="iconify sub-icon" data-icon="lucide:eye" data-width="14"></span>视觉设计
+          </span>
+        </div>
+      </div>
+
+      <a href="#about" data-section="about" onclick="navClick('about')" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm">
+        <span class="iconify" data-icon="lucide:user" data-width="18"></span> 关于我
+      </a>
     </nav>
 
-    <!-- Hero区域 -->
-    <section id="hero">
-        <canvas id="signalCanvas"></canvas>
-        <div class="hero-content">
-            <span class="hero-tag">探索 · 实验 · 创造</span>
-            <h1 class="hero-title">
-                在技术与艺术的<br><span class="highlight">交汇点发射信号</span>
-            </h1>
-            <p class="hero-subtitle">
-                这里记录着关于创意编程、交互设计与数字艺术的思考与实践。
-                每一个像素都承载着对未知的探索。
-            </p>
-            <div class="hero-buttons">
-                <a href="#articles" class="btn btn-primary">探索作品</a>
-                <a href="#interactive-demo" class="btn btn-secondary">体验演示</a>
+    <div class="sidebar-divider"></div>
+
+    <!-- 社交链接 -->
+    <div class="text-[10px] font-medium uppercase tracking-widest mb-2 px-3" style="color:var(--text-muted)">社交</div>
+    <div class="space-y-0.5 mb-4">
+      <a href="https://github.com/wangax0336" target="_blank" class="sub-item" style="text-decoration:none">
+        <span class="iconify sub-icon" data-icon="lucide:github" data-width="14"></span>GitHub<span class="ml-auto text-[10px]" style="color:var(--text-muted)">wangax0336</span>
+      </a>
+      <a href="mailto:2152028252@qq.com" class="sub-item" style="text-decoration:none">
+        <span class="iconify sub-icon" data-icon="lucide:mail" data-width="14"></span>邮箱<span class="ml-auto text-[10px] truncate max-w-[100px]" style="color:var(--text-muted)">2152028252@qq.com</span>
+      </a>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- 标签云 -->
+    <div class="text-[10px] font-medium uppercase tracking-widest mb-2 px-3" style="color:var(--text-muted)">标签</div>
+    <div class="flex flex-wrap gap-1.5 px-2 mb-4">
+      <span class="tag cursor-pointer hover:scale-105 transition-transform">前端开发</span>
+      <span class="tag cursor-pointer hover:scale-105 transition-transform">创意编程</span>
+      <span class="tag cursor-pointer hover:scale-105 transition-transform">交互设计</span>
+    </div>
+
+    <!-- 底部主题切换 -->
+    <div class="sidebar-divider"></div>
+    <button onclick="toggleTheme()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all sidebar-link">
+      <span class="iconify" data-icon="lucide:sun-moon" data-width="18"></span>
+      <span id="sidebarThemeText">切换至日间模式</span>
+    </button>
+  </div>
+</aside>
+
+<!-- 导航栏 -->
+<nav class="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 flex items-center px-3 sm:px-4 md:px-6" style="background:var(--nav-bg);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-glass);transition:background .4s">
+  <div class="max-w-7xl mx-auto w-full flex items-center justify-between">
+    <div class="flex items-center gap-2 sm:gap-3">
+      <button onclick="toggleSidebar()" class="p-1.5 sm:p-2 rounded-lg ripple transition-colors" style="color:var(--text-muted)" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'"><span class="iconify" data-icon="lucide:menu" data-width="20"></span></button>
+      <a href="#" class="flex items-center gap-2 sm:gap-2.5">
+        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold text-[10px] sm:text-xs breathe">W</div>
+        <span class="nav-title font-semibold text-xs sm:text-sm hidden sm:block" style="color:var(--text-primary)">WAX Blog</span>
+      </a>
+    </div>
+    <div class="hidden md:flex items-center gap-6">
+      <a href="#hero" class="text-sm transition-colors" style="color:var(--text-muted)" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">首页</a>
+      <a href="#articles" class="text-sm transition-colors" style="color:var(--text-muted)" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">文章</a>
+      <a href="#works" class="text-sm transition-colors" style="color:var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">作品</a>
+      <a href="#about" class="text-sm transition-colors" style="color:var(--text-muted)" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">关于</a>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <button id="themeToggle" onclick="toggleTheme()" class="p-1.5 sm:p-2 rounded-lg transition-all" style="color:var(--text-muted)" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'"><span class="iconify theme-toggle-icon" data-icon="lucide:moon" data-width="18" id="themeIcon"></span></button>
+      <a href="https://github.com/wangax0336" target="_blank" class="p-1.5 sm:p-2 rounded-lg transition-colors" style="color:var(--text-muted)" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'"><span class="iconify" data-icon="lucide:github" data-width="18"></span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- ========== Hero ========== -->
+<section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden">
+  <canvas id="particle-canvas"></canvas>
+  <div class="hero-glow" id="heroGlow"></div>
+  <div class="parallax-shape absolute top-12 right-[8%] w-40 sm:w-56 md:w-80 h-40 sm:h-56 md:h-80 rounded-full float-anim" style="border:1px solid var(--border-glass);animation-delay:-2s" data-speed="0.03"></div>
+  <div class="parallax-shape absolute bottom-12 left-[5%] w-28 sm:w-40 md:w-56 h-28 sm:h-40 md:h-56 rounded-full float-anim-reverse" style="border:1px solid var(--border-glass);animation-delay:-4s" data-speed="0.05"></div>
+  <div class="parallax-shape absolute top-[40%] left-[12%] w-2 sm:w-3 h-2 sm:h-3 rounded-full bg-indigo-500/40 float-anim" data-speed="0.08" style="animation-delay:-1s"></div>
+  <div class="parallax-shape absolute top-[25%] right-[18%] w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-purple-500/40 float-anim-reverse" data-speed="0.06" style="animation-delay:-3s"></div>
+  <div class="parallax-shape absolute bottom-[28%] right-[6%] w-2.5 sm:w-4 h-2.5 sm:h-4 rounded-full bg-cyan-500/25 float-anim" data-speed="0.04" style="animation-delay:-5s"></div>
+  <div class="parallax-shape absolute top-[60%] left-[8%] w-1.5 sm:w-2.5 h-1.5 sm:h-2.5 rounded-full bg-emerald-500/25 float-anim" data-speed="0.07" style="animation-delay:-2.5s"></div>
+  <div class="parallax-shape absolute top-[15%] left-[50%] -translate-x-1/2 w-[300px] sm:w-[450px] md:w-[600px] h-[300px] sm:h-[450px] md:h-[600px] rounded-full opacity-[0.03]" style="border:1px solid var(--accent)" data-speed="0.01"></div>
+
+  <div class="relative z-10 text-center px-4 sm:px-6 pt-14 sm:pt-16 max-w-4xl mx-auto w-full">
+    <div class="flex justify-center mb-6 sm:mb-8">
+      <div class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full glass text-[10px] sm:text-xs shimmer" style="color:var(--text-muted)">
+        <div class="status-dot" style="width:6px;height:6px;flex-shrink:0"></div>
+        <span>正在接收宇宙信号...</span>
+      </div>
+    </div>
+    <div class="hero-title-wrap mb-4 sm:mb-6">
+      <h1 class="hero-title-font font-semibold tracking-tight leading-[1.1] char-reveal" id="heroTitle" style="font-size:2rem">思考 · 记录 · 分享</h1>
+    </div>
+    <p class="hero-sub-font font-light mb-1 sm:mb-2 gradient-flow" style="color:var(--text-secondary);font-size:1rem">用文字丈量技术的深度，以代码描绘创意的边界</p>
+    <p class="text-xs sm:text-sm mb-6 sm:mb-10" style="color:var(--text-muted)">— WAX 的个人博客 —</p>
+    <div class="text-xs sm:text-sm mb-8 sm:mb-10 h-5 sm:h-6" style="color:var(--text-muted)"><span id="typewriter" class="typewriter"></span></div>
+    <div class="cta-buttons flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+      <a href="#articles" class="magnetic-btn ripple group relative inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 bg-white text-black rounded-xl text-sm font-medium hover:bg-slate-200 active:scale-95 transition-all w-full sm:w-auto">
+        <span class="iconify" data-icon="lucide:book-open" data-width="16"></span>开始阅读<span class="iconify group-hover:translate-x-1 transition-transform" data-icon="lucide:arrow-right" data-width="16"></span>
+      </a>
+      <a href="#about" class="magnetic-btn ripple inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl text-sm font-medium transition-all active:scale-95 glass w-full sm:w-auto" style="color:var(--text-secondary)">
+        <span class="iconify" data-icon="lucide:user" data-width="16"></span>了解我
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider max-w-4xl mx-auto"></div>
+
+<!-- ========== 关于我 ========== -->
+<section id="about" class="relative py-12 sm:py-16 md:py-24 px-4 sm:px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-10 sm:mb-16 reveal">
+      <span class="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-indigo-400 mb-2 sm:mb-3 block">About Me</span>
+      <div class="section-line"></div>
+      <h2 class="section-title-font font-semibold gradient-text tracking-tight" style="font-size:1.75rem">关于我</h2>
+    </div>
+    <div class="about-grid grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+      <div class="md:col-span-1 reveal-left" style="transition-delay:.1s">
+        <div class="card-flip glass rounded-2xl overflow-hidden namecard-min-h" style="min-height:380px">
+          <div class="card-flip-inner relative namecard-inner-h" style="min-height:380px">
+            <div class="card-front p-6 sm:p-8 flex flex-col items-center justify-center text-center" style="background:var(--bg-glass)">
+              <div class="relative mb-4 sm:mb-5">
+                <img src="https://picsum.photos/seed/wax-profile/120/120.jpg" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-indigo-500/30" alt="头像">
+                <div class="absolute -bottom-1 -right-1 status-dot"></div>
+              </div>
+              <h3 class="text-lg sm:text-xl font-semibold mb-1" style="color:var(--text-primary)">WAX</h3>
+              <p class="text-xs sm:text-sm text-indigo-400 mb-1">开发者</p>
+              <p class="text-[10px] sm:text-xs gradient-flow mb-3 sm:mb-4">创意编程 · 数字艺术</p>
+              <p class="text-[10px] sm:text-xs mb-4 sm:mb-5 flex items-center gap-1" style="color:var(--text-muted)"><span class="iconify" data-icon="lucide:map-pin" data-width="12"></span>杭州，中国</p>
+              <div class="flex gap-2 sm:gap-3">
+                <a href="https://github.com/wangax0336" target="_blank" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all" style="background:var(--bg-input);color:var(--text-muted)" onmouseover="this.style.color='#fff';this.style.background='rgba(99,102,241,.2)'" onmouseout="this.style.color='var(--text-muted)';this.style.background='var(--bg-input)'"><span class="iconify" data-icon="lucide:github" data-width="16"></span></a>
+                <a href="mailto:2152028252@qq.com" class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all" style="background:var(--bg-input);color:var(--text-muted)" onmouseover="this.style.color='#fff';this.style.background='rgba(99,102,241,.2)'" onmouseout="this.style.color='var(--text-muted)';this.style.background='var(--bg-input)'"><span class="iconify" data-icon="lucide:mail" data-width="16"></span></a>
+              </div>
+              <p class="mt-4 sm:mt-5 text-[10px] sm:text-xs" style="color:var(--text-muted)">悬停翻转查看更多 →</p>
             </div>
+            <div class="card-back p-5 sm:p-6 flex flex-col justify-center relative overflow-hidden" style="background:var(--bg-glass)">
+              <div class="namecard-particles" id="namecardParticles"></div>
+              <div class="relative z-10">
+                <h4 class="text-xs sm:text-sm font-semibold mb-3 sm:mb-4" style="color:var(--text-primary)">个人标签</h4>
+                <div class="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-5"><span class="tag">前端开发</span><span class="tag">创意编程</span><span class="tag">交互设计</span></div>
+                <h4 class="text-xs sm:text-sm font-semibold mb-2 sm:mb-3" style="color:var(--text-primary)">当前状态</h4>
+                <div class="space-y-1.5 sm:space-y-2">
+                  <div class="flex items-center gap-2 text-[10px] sm:text-xs" style="color:var(--text-secondary)"><span class="iconify text-green-400" data-icon="lucide:circle-check" data-width="14"></span>探索生成式艺术</div>
+                  <div class="flex items-center gap-2 text-[10px] sm:text-xs" style="color:var(--text-secondary)"><span class="iconify text-yellow-400" data-icon="lucide:circle-dot" data-width="14"></span>撰写技术博客</div>
+                </div>
+                <div class="mt-4 sm:mt-5 pt-3 sm:pt-4" style="border-top:1px solid var(--border-glass)"><p class="text-[10px] sm:text-xs italic" style="color:var(--text-muted)">"代码即画笔，浏览器即画布"</p></div>
+              </div>
+            </div>
+          </div>
         </div>
-    </section>
-
-    <!-- 精选文章 -->
-    <section id="articles">
-        <div class="section-header reveal">
-            <span class="section-tag">Writings</span>
-            <h2 class="section-title">创意</h2>
+      </div>
+      <div class="md:col-span-2 reveal-right" style="transition-delay:.2s">
+        <div class="glass rounded-2xl p-5 sm:p-6 md:p-8 h-full" id="aboutCard">
+          <h3 class="text-lg sm:text-2xl font-semibold mb-2" style="color:var(--text-primary)">你好，我是 <span class="gradient-text-cyan">WAX</span></h3>
+          <p class="text-xs sm:text-sm font-light leading-relaxed mb-4 sm:mb-6" style="color:var(--text-secondary)">一个热衷于在技术与艺术交汇处探索的前端开发者。我相信代码不仅是工具，更是一种表达方式。从创意编程到交互设计，我在数字世界中寻找无限可能。</p>
+          <p class="text-xs sm:text-sm font-light leading-relaxed mb-6 sm:mb-8" style="color:var(--text-secondary)">目前正在大学学习软件工程，同时在构建个人项目与开源工具。这个博客记录着我的学习历程、技术思考与创意实验——每一个像素都承载着对未知的探索。</p>
+          <div class="stats-grid grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div class="text-center p-3 sm:p-4 rounded-xl pop-in" style="background:var(--bg-input);transition-delay:.1s;cursor:default" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='var(--bg-input)'"><div class="text-xl sm:text-2xl font-bold text-indigo-400 counter" data-target="0">0</div><div class="text-[10px] sm:text-xs mt-1" style="color:var(--text-muted)">篇文章</div></div>
+            <div class="text-center p-3 sm:p-4 rounded-xl pop-in" style="background:var(--bg-input);transition-delay:.2s;cursor:default" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='var(--bg-input)'"><div class="text-xl sm:text-2xl font-bold text-cyan-400 counter" data-target="0">0</div><div class="text-[10px] sm:text-xs mt-1" style="color:var(--text-muted)">个作品</div></div>
+            <div class="text-center p-3 sm:p-4 rounded-xl pop-in" style="background:var(--bg-input);transition-delay:.3s;cursor:default" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='var(--bg-input)'"><div class="text-xl sm:text-2xl font-bold text-purple-400 counter" data-target="-">0</div><div class="text-[10px] sm:text-xs mt-1" style="color:var(--text-muted)">天创作</div></div>
+            <div class="text-center p-3 sm:p-4 rounded-xl pop-in" style="background:var(--bg-input);transition-delay:.4s;cursor:default" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='var(--bg-input)'"><div class="text-xl sm:text-2xl font-bold text-green-400 counter" data-target="-">0</div><div class="text-[10px] sm:text-xs mt-1" style="color:var(--text-muted)">次提交</div></div>
+          </div>
         </div>
-        <div class="articles-grid">
-            <a href="Linux.html" style="text-decoration:none;"><article class="article-card reveal">
-                <div class="article-media">
-                    <canvas id="articleCanvas1"></canvas>
-                </div>
-                <div class="article-content">
-                    <div class="article-meta">
-                        <span class="article-tag">Linux</span>
-                        <span class="article-date">2026</span>
-                    </div>
-                </div>
-            </article></a>
-            <article class="article-card reveal">
-                <div class="article-media">
-                    <canvas id="articleCanvas2"></canvas>
-                </div>
-                <div class="article-content">
-                    <div class="article-meta">
-                        <span class="article-tag">交互设计</span>
-                        <span class="article-date">2026</span>
-                    </div>
-                </div>
-            </article>
-            <article class="article-card reveal">
-                <div class="article-media">
-                    <canvas id="articleCanvas3"></canvas>
-                </div>
-                <div class="article-content">
-                    <div class="article-meta">
-                        <span class="article-tag">创意编程</span>
-                        <span class="article-date">2026</span>
-                    </div>
-                    <h3 class="article-title"></h3>
-                    <p class="article-excerpt"></p>
-                </div>
-            </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider max-w-4xl mx-auto"></div>
+
+<!-- ========== 文章 ========== -->
+<section id="articles" class="relative py-12 sm:py-16 md:py-24 px-4 sm:px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-10 sm:mb-16 reveal">
+      <span class="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-indigo-400 mb-2 sm:mb-3 block">Writings</span>
+      <div class="section-line"></div>
+      <h2 class="section-title-font font-semibold gradient-text tracking-tight" style="font-size:1.75rem">创意文章</h2>
+      <p class="font-light mt-3 sm:mt-4 max-w-xl mx-auto text-xs sm:text-sm" style="color:var(--text-secondary)">记录关于创意编程、交互设计与数字艺术的思考与实践</p>
+    </div>
+    <div class="card-grid-articles grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6" id="articlesGrid">
+      <a href="Linux.html" class="flip-card block reveal card-spotlight" style="transition-delay:.1s;text-decoration:none" onmousemove="trackSpotlight(event,this)" onmouseleave="resetSpotlight(this)">
+        <div class="flip-card-inner flip-article-h" style="min-height:340px">
+          <div class="flip-card-front glass rounded-2xl overflow-hidden h-full">
+            <div class="relative flip-article-img overflow-hidden" style="height:220px">
+              <img src="https://picsum.photos/seed/article-css-cq/600/300.jpg" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110" alt="封面">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div class="absolute top-3 left-3"><span class="tag">操作系统</span></div>
+              <div class="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4"><h3 class="text-base sm:text-lg font-semibold text-white line-clamp-2 drop-shadow-lg">Linux 基础</h3></div>
+            </div>
+            <div class="p-3 sm:p-4 flex items-center justify-between text-[10px] sm:text-xs" style="color:var(--text-muted)">
+              <span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:calendar" data-width="12"></span>2026-06</span>
+              <span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:clock" data-width="12"></span> - day</span>
+            </div>
+          </div>
+          <div class="flip-card-back rounded-2xl p-5 sm:p-6 flex flex-col justify-center" style="border:1px solid var(--border-glass)">
+            <div class="mb-3"><span class="tag">操作系统</span></div>
+            <h3 class="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style="color:var(--text-primary)">Linux 基础</h3>
+            <p class="text-xs sm:text-sm font-light leading-relaxed mb-4 sm:mb-5" style="color:var(--text-secondary)">分享关于 Linux 的基础知识， 了解大多数系统·服务器的内核</p>
+            <div class="flex items-center gap-2 text-indigo-400 text-xs sm:text-sm font-medium group"><span>阅读全文</span><span class="iconify group-hover:translate-x-1 transition-transform" data-icon="lucide:arrow-right" data-width="16"></span></div>
+          </div>
         </div>
-    </section>
-
-    <!-- 实验板块 -->
-    <section id="experiments">
-        <div class="container">
-            <div class="section-header reveal">
-                <span class="section-tag">Laboratory</span>
-                <h2 class="section-title">实验工坊</h2>
-                <p class="section-desc">探索技术边界的交互式实验项目</p>
+      </a>
+      <a href="Linux.html" class="flip-card block reveal card-spotlight" style="transition-delay:.1s;text-decoration:none" onmousemove="trackSpotlight(event,this)" onmouseleave="resetSpotlight(this)">
+        <div class="flip-card-inner flip-article-h" style="min-height:340px">
+          <div class="flip-card-front glass rounded-2xl overflow-hidden h-full">
+            <div class="relative flip-article-img overflow-hidden" style="height:220px">
+              <img src="https://picsum.photos/seed/article-css-cq/600/300.jpg" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110" alt="封面">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div class="absolute top-3 left-3"><span class="tag">操作系统</span></div>
+              <div class="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4"><h3 class="text-base sm:text-lg font-semibold text-white line-clamp-2 drop-shadow-lg">Linux 基础</h3></div>
             </div>
-            <div class="experiments-grid">
-                <div class="experiment-card reveal">
-                    <div class="experiment-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d4a853" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                            <line x1="2" y1="12" x2="22" y2="12"/>
-                        </svg>
-                    </div>
-                    <h3 class="experiment-title">粒子引力场</h3>
-                    <p class="experiment-desc">模拟万有引力的粒子系统，观察秩序如何在混沌中涌现</p>
-                    <div class="experiment-tech">
-                        <span class="tech-badge">Canvas 2D</span>
-                        <span class="tech-badge">Physics</span>
-                        <span class="tech-badge">ES6</span>
-                    </div>
-                </div>
-                <div class="experiment-card reveal">
-                    <div class="experiment-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4ecdc4" stroke-width="2">
-                            <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
-                            <line x1="12" y1="22" x2="12" y2="15.5"/>
-                            <polyline points="22 8.5 12 15.5 2 8.5"/>
-                        </svg>
-                    </div>
-                    <h3 class="experiment-title">3D体素引擎</h3>
-                    <p class="experiment-desc">纯JavaScript实现的体素渲染器，探索三维空间的数字构建</p>
-                    <div class="experiment-tech">
-                        <span class="tech-badge">WebGL</span>
-                        <span class="tech-badge">3D Graphics</span>
-                        <span class="tech-badge">GLSL</span>
-                    </div>
-                </div>
-                <div class="experiment-card reveal">
-                    <div class="experiment-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e07a5f" stroke-width="2">
-                            <path d="M12 3v18"/>
-                            <path d="M18.5 8.5c-3.5-3.5-9-3.5-12.5 0"/>
-                            <path d="M18.5 15.5c-3.5 3.5-9 3.5-12.5 0"/>
-                        </svg>
-                    </div>
-                    <h3 class="experiment-title">音频可视化器</h3>
-                    <p class="experiment-desc">实时音频频谱分析与视觉化，让声音看得见</p>
-                    <div class="experiment-tech">
-                        <span class="tech-badge">Web Audio</span>
-                        <span class="tech-badge">Canvas</span>
-                        <span class="tech-badge">FFT</span>
-                    </div>
-                </div>
-                <div class="experiment-card reveal">
-                    <div class="experiment-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#44a08d" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <path d="M21 15l-5-5L5 21"/>
-                        </svg>
-                    </div>
-                    <h3 class="experiment-title">生成艺术引擎</h3>
-                    <p class="experiment-desc">算法驱动的图像生成，每次刷新都是独一无二的艺术品</p>
-                    <div class="experiment-tech">
-                        <span class="tech-badge">Algorithm</span>
-                        <span class="tech-badge">Random</span>
-                        <span class="tech-badge">SVG</span>
-                    </div>
-                </div>
+            <div class="p-3 sm:p-4 flex items-center justify-between text-[10px] sm:text-xs" style="color:var(--text-muted)">
+              <span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:calendar" data-width="12"></span>2026-06</span>
+              <span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:clock" data-width="12"></span> - day</span>
             </div>
+          </div>
+          <div class="flip-card-back rounded-2xl p-5 sm:p-6 flex flex-col justify-center" style="border:1px solid var(--border-glass)">
+            <div class="mb-3"><span class="tag">操作系统</span></div>
+            <h3 class="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style="color:var(--text-primary)">Linux 基础</h3>
+            <p class="text-xs sm:text-sm font-light leading-relaxed mb-4 sm:mb-5" style="color:var(--text-secondary)">分享关于 Linux 的基础知识， 了解大多数系统·服务器的内核</p>
+            <div class="flex items-center gap-2 text-indigo-400 text-xs sm:text-sm font-medium group"><span>阅读全文</span><span class="iconify group-hover:translate-x-1 transition-transform" data-icon="lucide:arrow-right" data-width="16"></span></div>
+          </div>
         </div>
-    </section>
+      </a>
+      <div class="add-btn add-btn-pulse rounded-2xl flex flex-col items-center justify-center gap-2 sm:gap-3 pop-in flip-article-h" style="min-height:340px;transition-delay:.15s" onclick="addArticle()">
+        <span class="iconify" data-icon="lucide:plus-circle" data-width="36"></span>
+        <span class="text-xs sm:text-sm font-medium">添加新文章</span>
+        <span class="text-[10px] sm:text-xs" style="color:var(--text-muted)">点击创建</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- 交互演示区 -->
-    <section id="interactive-demo">
-        <div class="section-header reveal">
-            <span class="section-tag">Interactive</span>
-            <h2 class="section-title">实时演示</h2>
-            <p class="section-desc">移动鼠标与粒子互动，体验创意编程的魅力</p>
+<div class="section-divider max-w-4xl mx-auto"></div>
+
+<!-- ========== 作品展示 ========== -->
+<section id="works" class="relative py-12 sm:py-16 md:py-24 px-4 sm:px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-10 sm:mb-16 reveal">
+      <span class="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-indigo-400 mb-2 sm:mb-3 block">Works</span>
+      <div class="section-line"></div>
+      <h2 class="section-title-font font-semibold gradient-text tracking-tight" style="font-size:1.75rem">作品展示</h2>
+      <p class="font-light mt-3 sm:mt-4 max-w-xl mx-auto text-xs sm:text-sm" style="color:var(--text-secondary)">探索技术边界的交互式实验项目</p>
+    </div>
+    <div class="card-grid-works grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6" id="worksGrid">
+      <a href="Sakura.html" class="flip-card block reveal card-spotlight" style="transition-delay:.1s;text-decoration:none" onmousemove="trackSpotlight(event,this)" onmouseleave="resetSpotlight(this)">
+        <div class="flip-card-inner flip-work-h" style="min-height:400px">
+          <div class="flip-card-front glass rounded-2xl overflow-hidden h-full">
+            <div class="relative flip-work-img overflow-hidden" style="height:240px">
+              <img src="https://picsum.photos/seed/work-particle-field/800/400.jpg" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105" alt="作品封面">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+              <div class="absolute bottom-3 sm:bottom-4 left-4 sm:left-5 right-4 sm:right-5">
+                <div class="flex gap-1.5 sm:gap-2 mb-1.5 sm:mb-2"><span class="tag">WebGL</span><span class="tag">Three.js</span><span class="tag">HTML</span></div>
+                <h3 class="text-lg sm:text-xl font-semibold text-white drop-shadow-lg">Sakura</h3>
+              </div>
+            </div>
+            <div class="p-3 sm:p-4">
+              <p class="text-xs sm:text-sm font-light" style="color:var(--text-secondary)">Sakura Pagoda Voxel Art</p>
+              <div class="flex items-center gap-3 mt-2 sm:mt-3 text-[10px] sm:text-xs" style="color:var(--text-muted)">
+                <span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:code-2" data-width="12"></span>纯前端</span>
+                <span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:mouse-pointer" data-width="12"></span>可交互</span>
+              </div>
+            </div>
+          </div>
+          <div class="flip-card-back rounded-2xl p-5 sm:p-6 flex flex-col justify-center" style="border:1px solid var(--border-glass)">
+            <div class="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4"><span class="tag">WebGL</span><span class="tag">Three.js</span><span class="tag">HTML</span></div>
+            <h3 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-3" style="color:var(--text-primary)">Sakura Pagoda Voxel Art</h3>
+            <p class="text-xs sm:text-sm font-light leading-relaxed mb-4 sm:mb-5" style="color:var(--text-secondary)">包含了动态落下的樱花粒子、以及光照阴影系统</p>
+            <div class="flex items-center gap-2 text-indigo-400 text-xs sm:text-sm font-medium group"><span>查看演示</span><span class="iconify group-hover:translate-x-1 transition-transform" data-icon="lucide:external-link" data-width="16"></span></div>
+          </div>
         </div>
-        <div class="demo-container reveal">
-            <div class="demo-header">
-                <span class="demo-title">particle-attractor.js</span>
-                <div class="demo-controls">
-                    <span class="demo-btn close"></span>
-                    <span class="demo-btn minimize"></span>
-                    <span class="demo-btn maximize"></span>
-                </div>
-            </div>
-            <canvas id="demoCanvas"></canvas>
-            <div class="demo-footer">
-                <span>粒子数量: <span id="particleCount">0</span></span>
-                <span>帧率: <span id="fps">0</span> FPS</span>
-            </div>
-        </div>
-    </section>
+      </a>
+      <div class="add-btn add-btn-pulse rounded-2xl flex flex-col items-center justify-center gap-2 sm:gap-3 pop-in flip-work-h" style="min-height:400px;transition-delay:.15s" onclick="addWork()">
+        <span class="iconify" data-icon="lucide:plus-circle" data-width="36"></span>
+        <span class="text-xs sm:text-sm font-medium">添加新作品</span>
+        <span class="text-[10px] sm:text-xs" style="color:var(--text-muted)">点击创建</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- 时间线 -->
-    <section id="timeline">
-        <div class="container">
-            <div class="section-header reveal">
-                <span class="section-tag">Journey</span>
-                <h2 class="section-title">成长轨迹</h2>
-                <p class="section-desc">关键里程碑与重要时刻</p>
-            </div>
-            <div class="timeline-wrapper">
-                <div class="timeline-item">
-                    <span class="timeline-year">2024</span>
-                    <h3 class="timeline-title">步入大学</h3>
-                    <p class="timeline-desc">开始学习计算机方面知识</p>
-                </div>
-                <div class="timeline-item">
-                    <span class="timeline-year">2026</span>
-                    <h3 class="timeline-title">网站发布</h3>
-                    <p class="timeline-desc">AI辅助完成</p>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- 页脚 -->
+<footer style="border-top:1px solid var(--border-glass)" class="py-8 sm:py-12 px-4 sm:px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="footer-inner flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold text-[10px] sm:text-xs">W</div>
+        <span class="text-xs sm:text-sm" style="color:var(--text-muted)">WAX Blog © 2026</span>
+      </div>
+      <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+        <a href="mailto:2152028252@qq.com" class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm transition-colors" style="color:var(--text-muted)" onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='var(--text-muted)'"><span class="iconify" data-icon="lucide:mail" data-width="14"></span><span class="break-all">2152028252@qq.com</span></a>
+        <a href="https://github.com/wangax0336" target="_blank" class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm transition-colors" style="color:var(--text-muted)" onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='var(--text-muted)'"><span class="iconify" data-icon="lucide:github" data-width="14"></span>wangax0336</a>
+      </div>
+    </div>
+  </div>
+</footer>
 
-    <!-- 联系表单 -->
-    <section id="contact">
-        <div class="container">
-            <div class="section-header reveal">
-                <span class="section-tag">Connect</span>
-                <h2 class="section-title">取得联系</h2>
-                <p class="section-desc">随时与我联系</p>
-            </div>
-            <div class="contact-wrapper reveal">
-                <div class="contact-info">
-                    <h3>让我们一起创造</h3>
-                    <p>无论是技术交流还是建议，我都期待与你的对话。</p>
-                    <div class="contact-links">
-                        <a href="#" class="contact-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                <polyline points="22,6 12,13 2,6"/>
-                            </svg>
-                            2152028252@qq.com
-                        </a>
-                        <a href="#" class="contact-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                <circle cx="12" cy="10" r="3"/>
-                            </svg>
-                            杭州，中国
-                        </a>
-                    </div>
-                </div>
-                <form class="contact-form" id="contactForm">
-                    <div class="form-group">
-                        <label for="name">姓名</label>
-                        <input type="text" id="name" placeholder="你的名字" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email">邮箱</label>
-                        <input type="email" id="email" placeholder="your@email.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="message">留言</label>
-                        <textarea id="message" placeholder="想说的话..." required></textarea>
-                    </div>
-                    <button type="submit" class="submit-btn">发送</button>
-                </form>
-            </div>
-        </div>
-    </section>
+<button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" class="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-40 w-9 h-9 sm:w-10 sm:h-10 rounded-xl backdrop-blur-sm transition-all opacity-0 pointer-events-none flex items-center justify-center" style="background:var(--bg-input);border:1px solid var(--border-glass);color:var(--text-muted)"><span class="iconify" data-icon="lucide:arrow-up" data-width="16"></span></button>
 
-    <!-- 页脚 -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Personal Blog</h4>
-                <p>在数字宇宙中发射创意信号，<br>探索技术与艺术的无限可能。</p>
-            </div>
-            <div class="footer-section">
-                <h4>导航</h4>
-                <ul class="footer-links">
-                    <li><a href="#articles">创意</a></li>
-                    <li><a href="#experiments">实验项目</a></li>
-                    <li><a href="#timeline">关于我</a></li>
-                    <li><a href="#contact">联系</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>精选链接</h4>
-                <ul class="footer-links">
-                    <li><a href="#">GitHub</a></li>
-                    <li><a href="#">CodePen</a></li>
-                    <li><a href="#">Dribbble</a></li>
-                    <li><a href="#">Twitter</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>灵感来源</h4>
-                <div class="inspiration-tags">
-                    <span class="inspiration-tag">Generative Art</span>
-                    <span class="inspiration-tag">Creative Coding</span>
-                    <span class="inspiration-tag">GLSL</span>
-                    <span class="inspiration-tag">Three.js</span>
-                    <span class="inspiration-tag">p5.js</span>
-                    <span class="inspiration-tag">Processing</span>
-                </div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>Personal Blog 2026.</p>
-            <div class="social-links">
-                <a href="#">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                    </svg>
-                </a>
-                <a href="#">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                    </svg>
-                </a>
-                <a href="#">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                    </svg>
-                </a>
-            </div>
-        </div>
-    </footer>
+<script>
+// ========== 主题 ==========
+let currentTheme = localStorage.getItem('theme') || 'dark';
+applyTheme(currentTheme);
+function applyTheme(t) {
+  currentTheme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('theme', t);
+  document.getElementById('themeIcon').setAttribute('data-icon', t === 'dark' ? 'lucide:moon' : 'lucide:sun');
+  document.getElementById('themeIcon').classList.add('rotate');
+  setTimeout(() => document.getElementById('themeIcon').classList.remove('rotate'), 400);
+  const st = document.getElementById('sidebarThemeText');
+  if (st) st.textContent = t === 'dark' ? '切换至日间模式' : '切换至夜间模式';
+}
+function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
 
-    <script>
-        // ========== 导航栏滚动效果 ==========
-        const nav = document.querySelector('nav');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                nav.classList.add('scrolled');
-            } else {
-                nav.classList.remove('scrolled');
-            }
-        });
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
 
-        // ========== Hero信号波背景 ==========
-        const signalCanvas = document.getElementById('signalCanvas');
-        const signalCtx = signalCanvas.getContext('2d');
-        let signalTime = 0;
+// ========== 侧边栏 ==========
+function toggleSidebar() {
+  const s = document.getElementById('sidebar'), o = document.getElementById('sidebarOverlay');
+  s.classList.toggle('open'); o.classList.toggle('active');
+  document.body.style.overflow = s.classList.contains('open') ? 'hidden' : '';
+}
+function toggleSubMenu(id, btn) {
+  const menu = document.getElementById(id);
+  const wasExpanded = menu.classList.contains('expanded');
+  menu.classList.toggle('expanded');
+  btn.querySelector('.menu-arrow').classList.toggle('rotated');
+}
 
-        function resizeSignalCanvas() {
-            signalCanvas.width = window.innerWidth;
-            signalCanvas.height = window.innerHeight;
-        }
-        resizeSignalCanvas();
-        window.addEventListener('resize', resizeSignalCanvas);
+// 主导航点击
+function navClick(sectionId) {
+  toggleSidebar();
+  setTimeout(() => document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' }), 350);
+}
 
-        function drawSignalWaves() {
-            signalCtx.fillStyle = 'rgba(10, 10, 12, 0.1)';
-            signalCtx.fillRect(0, 0, signalCanvas.width, signalCanvas.height);
+// 子菜单点击：展开父级 + 高亮 + 滚动
+function subClick(sectionId, category) {
+  // 展开对应子菜单
+  const menuMap = { articles: 'articles-menu', works: 'works-menu' };
+  const menuId = menuMap[sectionId];
+  if (menuId) {
+    const menu = document.getElementById(menuId);
+    if (!menu.classList.contains('expanded')) {
+      menu.classList.add('expanded');
+      menu.previousElementSibling.querySelector('.menu-arrow').classList.add('rotated');
+    }
+  }
+  // 高亮子项
+  document.querySelectorAll('.sub-item').forEach(i => i.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  // 关闭侧边栏并滚动
+  toggleSidebar();
+  setTimeout(() => {
+    document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
+  }, 350);
+}
 
-            const waves = [
-                { y: signalCanvas.height * 0.3, amp: 50, freq: 0.008, speed: 0.02, color: 'rgba(212, 168, 83, 0.15)' },
-                { y: signalCanvas.height * 0.5, amp: 40, freq: 0.012, speed: 0.025, color: 'rgba(78, 205, 196, 0.12)' },
-                { y: signalCanvas.height * 0.7, amp: 60, freq: 0.006, speed: 0.015, color: 'rgba(224, 122, 95, 0.1)' }
-            ];
+// ========== 滚动联动高亮 ==========
+const sectionMap = [
+  { id: 'hero', menuSelector: '[data-section="hero"]', subKey: null },
+  { id: 'about', menuSelector: '[data-section="about"]', subKey: null },
+  { id: 'articles', menuSelector: '[data-section="articles"]', subKey: 'articles' },
+  { id: 'works', menuSelector: '[data-section="works"]', subKey: 'works' },
+];
 
-            waves.forEach(wave => {
-                signalCtx.beginPath();
-                signalCtx.moveTo(0, wave.y);
+function updateSidebarHighlight() {
+  let current = 'hero';
+  const scrollY = window.scrollY;
+  sectionMap.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el && scrollY >= el.offsetTop - 120) current = s.id;
+  });
 
-                for (let x = 0; x < signalCanvas.width; x += 2) {
-                    const y = wave.y + 
-                        Math.sin(x * wave.freq + signalTime * wave.speed) * wave.amp +
-                        Math.sin(x * wave.freq * 2 + signalTime * wave.speed * 1.5) * wave.amp * 0.3;
-                    signalCtx.lineTo(x, y);
-                }
+  // 清除所有高亮
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.sub-item').forEach(i => i.classList.remove('active'));
 
-                signalCtx.strokeStyle = wave.color;
-                signalCtx.lineWidth = 2;
-                signalCtx.stroke();
+  // 高亮当前区段对应的主链接
+  const activeLink = document.querySelector(`.sidebar-link[data-section="${current}"]`);
+  if (activeLink) activeLink.classList.add('active');
 
-                // 绘制发光效果
-                signalCtx.shadowBlur = 20;
-                signalCtx.shadowColor = wave.color;
-                signalCtx.stroke();
-                signalCtx.shadowBlur = 0;
-            });
+  // 高亮对应子菜单的第一个子项
+  const match = sectionMap.find(s => s.id === current);
+  if (match && match.subKey) {
+    const menuMap = { articles: 'articles-menu', works: 'works-menu' };
+    const menu = document.getElementById(menuMap[match.subKey]);
+    if (menu && !menu.classList.contains('expanded')) {
+      menu.classList.add('expanded');
+      menu.previousElementSibling.querySelector('.menu-arrow').classList.add('rotated');
+    }
+    const firstSub = menu ? menu.querySelector('.sub-item') : null;
+    if (firstSub && !menu.querySelector('.sub-item.active')) firstSub.classList.add('active');
+  }
+}
+window.addEventListener('scroll', updateSidebarHighlight);
+updateSidebarHighlight();
 
-            // 绘制连接线（信号节点）
-            for (let i = 0; i < 5; i++) {
-                const x = (signalTime * 50 + i * signalCanvas.width / 5) % signalCanvas.width;
-                const y = signalCanvas.height * 0.5 + Math.sin(x * 0.01 + signalTime * 0.02) * 40;
-                
-                signalCtx.beginPath();
-                signalCtx.arc(x, y, 4, 0, Math.PI * 2);
-                signalCtx.fillStyle = 'rgba(212, 168, 83, 0.8)';
-                signalCtx.fill();
+// ========== 光标追踪 ==========
+const cursorGlow = document.getElementById('cursorGlow');
+let cursorX = -500, cursorY = -500, glowX = -500, glowY = -500;
+document.addEventListener('mousemove', e => { cursorX = e.clientX; cursorY = e.clientY; });
+function animateCursor() { glowX += (cursorX - glowX) * 0.06; glowY += (cursorY - glowY) * 0.06; cursorGlow.style.left = glowX + 'px'; cursorGlow.style.top = glowY + 'px'; requestAnimationFrame(animateCursor); }
+animateCursor();
 
-                // 光晕
-                const gradient = signalCtx.createRadialGradient(x, y, 0, x, y, 30);
-                gradient.addColorStop(0, 'rgba(212, 168, 83, 0.3)');
-                gradient.addColorStop(1, 'rgba(212, 168, 83, 0)');
-                signalCtx.beginPath();
-                signalCtx.arc(x, y, 30, 0, Math.PI * 2);
-                signalCtx.fillStyle = gradient;
-                signalCtx.fill();
-            }
+// ========== 视差 ==========
+document.addEventListener('mousemove', e => { const cx = e.clientX / window.innerWidth - 0.5; const cy = e.clientY / window.innerHeight - 0.5; document.querySelectorAll('.parallax-shape').forEach(el => { const s = parseFloat(el.dataset.speed) || 0.03; el.style.transform = `translate(${cx * s * 120}px, ${cy * s * 120}px)`; }); });
 
-            signalTime++;
-            requestAnimationFrame(drawSignalWaves);
-        }
-        drawSignalWaves();
+// ========== 磁吸按钮 ==========
+document.querySelectorAll('.magnetic-btn').forEach(btn => { btn.addEventListener('mousemove', e => { const r = btn.getBoundingClientRect(); btn.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * 0.15}px, ${(e.clientY - r.top - r.height / 2) * 0.15}px)`; }); btn.addEventListener('mouseleave', () => { btn.style.transform = 'translate(0,0)'; }); });
 
-        // ========== 鼠标粒子效果 ==========
-        const mouseCanvas = document.getElementById('mouseParticles');
-        const mouseCtx = mouseCanvas.getContext('2d');
-        const mouseParticles = [];
-        let mouseX = 0, mouseY = 0;
+// ========== 卡片高光 ==========
+function trackSpotlight(e, el) { const r = el.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top; const f = el.querySelector('.flip-card-front'); if (f) f.style.background = `radial-gradient(300px circle at ${x}px ${y}px, rgba(99,102,241,0.08), transparent 70%), var(--bg-glass)`; }
+function resetSpotlight(el) { const f = el.querySelector('.flip-card-front'); if (f) f.style.background = 'var(--bg-glass)'; }
 
-        function resizeMouseCanvas() {
-            mouseCanvas.width = window.innerWidth;
-            mouseCanvas.height = window.innerHeight;
-        }
-        resizeMouseCanvas();
-        window.addEventListener('resize', resizeMouseCanvas);
+// ========== 粒子 ==========
+const canvas = document.getElementById('particle-canvas'); const ctx = canvas.getContext('2d'); let particles = [];
+function getPC() { return getComputedStyle(document.documentElement).getPropertyValue('--particle-c').trim() || '148,163,184'; }
+function getPL() { return getComputedStyle(document.documentElement).getPropertyValue('--particle-l').trim() || '99,102,241'; }
+function resizeCanvas() { canvas.width = canvas.parentElement.offsetWidth; canvas.height = canvas.parentElement.offsetHeight; }
+resizeCanvas(); window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+function getParticleCount() { const w = window.innerWidth; if (w < 640) return 40; if (w < 1024) return 80; return 120; }
+class Particle { constructor() { this.reset(); } reset() { this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.size = Math.random() * 2.5 + 0.5; this.speedX = (Math.random() - 0.5) * 0.4; this.speedY = (Math.random() - 0.5) * 0.4; this.opacity = Math.random() * 0.5 + 0.1; this.pulse = Math.random() * Math.PI * 2; } update() { this.x += this.speedX; this.y += this.speedY; this.pulse += 0.015; if (this.x < 0 || this.x > canvas.width) this.speedX *= -1; if (this.y < 0 || this.y > canvas.height) this.speedY *= -1; } draw() { const op = this.opacity + Math.sin(this.pulse) * 0.12; const sz = this.size + Math.sin(this.pulse) * 0.3; ctx.beginPath(); ctx.arc(this.x, this.y, Math.max(0.1, sz), 0, Math.PI * 2); ctx.fillStyle = `rgba(${getPC()},${Math.max(0, op)})`; ctx.fill(); } }
+function initParticles() { particles = []; const c = getParticleCount(); for (let i = 0; i < c; i++) particles.push(new Particle()); }
+initParticles();
+function animateParticles() { ctx.clearRect(0, 0, canvas.width, canvas.height); const lc = getPL(); particles.forEach(p => { p.update(); p.draw(); }); const ld = window.innerWidth < 640 ? 90 : 140; for (let i = 0; i < particles.length; i++) { for (let j = i + 1; j < particles.length; j++) { const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y, d = Math.sqrt(dx * dx + dy * dy); if (d < ld) { ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(${lc},${0.1 * (1 - d / ld)})`; ctx.lineWidth = 0.5; ctx.stroke(); } } } const hero = document.getElementById('hero'); const rect = hero.getBoundingClientRect(); if (cursorY < rect.bottom && cursorX > rect.left && cursorX < rect.right) { const mx = cursorX - rect.left, my = cursorY - rect.top; particles.forEach(p => { const dx = mx - p.x, dy = my - p.y, d = Math.sqrt(dx * dx + dy * dy); if (d < 180 && d > 0) { p.x += dx * 0.003; p.y += dy * 0.003; } }); ctx.beginPath(); ctx.arc(mx, my, 3, 0, Math.PI * 2); ctx.fillStyle = `rgba(${lc},0.3)`; ctx.fill(); const ml = window.innerWidth < 640 ? 100 : 160; particles.forEach(p => { const dx = mx - p.x, dy = my - p.y, d = Math.sqrt(dx * dx + dy * dy); if (d < ml) { ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(p.x, p.y); ctx.strokeStyle = `rgba(${lc},${0.15 * (1 - d / ml)})`; ctx.lineWidth = 0.8; ctx.stroke(); } }); } requestAnimationFrame(animateParticles); }
+animateParticles();
 
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            
-            // 添加新粒子
-            for (let i = 0; i < 2; i++) {
-                mouseParticles.push({
-                    x: mouseX + (Math.random() - 0.5) * 10,
-                    y: mouseY + (Math.random() - 0.5) * 10,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    life: 1,
-                    decay: 0.02 + Math.random() * 0.02,
-                    size: 2 + Math.random() * 3,
-                    color: Math.random() > 0.5 ? '#d4a853' : '#4ecdc4'
-                });
-            }
-        });
+// ========== 打字机 ==========
+const phrases = ['每一个像素都承载着对未知的探索','代码即画笔，浏览器即画布','在混沌中寻找秩序，在算法中发现美','思考 · 记录 · 分享'];
+let pi = 0, ci = 0, del = false; const tw = document.getElementById('typewriter');
+function typeWriter() { const cur = phrases[pi]; if (del) { tw.textContent = cur.substring(0, ci--); if (ci < 0) { del = false; pi = (pi + 1) % phrases.length; setTimeout(typeWriter, 600); return; } setTimeout(typeWriter, 25); } else { tw.textContent = cur.substring(0, ci++); if (ci > cur.length) { del = true; setTimeout(typeWriter, 2200); return; } setTimeout(typeWriter, 70); } }
+setTimeout(typeWriter, 1200);
 
-        function animateMouseParticles() {
-            mouseCtx.clearRect(0, 0, mouseCanvas.width, mouseCanvas.height);
+// ========== Hero 逐字动画 ==========
+(function() { const el = document.getElementById('heroTitle'); const text = el.textContent.trim(); el.textContent = ''; [...text].forEach((ch, i) => { const span = document.createElement('span'); span.className = 'char gradient-text'; span.textContent = ch === ' ' ? '\u00A0' : ch; span.style.transitionDelay = (i * 0.04 + 0.3) + 's'; el.appendChild(span); }); setTimeout(() => el.classList.add('visible'), 100); })();
 
-            for (let i = mouseParticles.length - 1; i >= 0; i--) {
-                const p = mouseParticles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= p.decay;
+// ========== 名片粒子 ==========
+(function() { const c = document.getElementById('namecardParticles'); if (!c) return; for (let i = 0; i < 15; i++) { const s = document.createElement('span'); s.style.left = Math.random() * 100 + '%'; s.style.animationDelay = Math.random() * 8 + 's'; s.style.animationDuration = (6 + Math.random() * 6) + 's'; s.style.width = (1 + Math.random() * 2) + 'px'; s.style.height = s.style.width; c.appendChild(s); } })();
 
-                if (p.life <= 0) {
-                    mouseParticles.splice(i, 1);
-                    continue;
-                }
+// ========== 关于我卡片高光 ==========
+const aboutCard = document.getElementById('aboutCard');
+if (aboutCard) { aboutCard.addEventListener('mousemove', e => { const r = aboutCard.getBoundingClientRect(); aboutCard.style.background = `radial-gradient(400px circle at ${e.clientX - r.left}px ${e.clientY - r.top}px, rgba(99,102,241,0.06), var(--bg-glass) 70%)`; }); aboutCard.addEventListener('mouseleave', () => { aboutCard.style.background = 'var(--bg-glass)'; }); }
 
-                mouseCtx.beginPath();
-                mouseCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-                mouseCtx.fillStyle = p.color;
-                mouseCtx.globalAlpha = p.life * 0.6;
-                mouseCtx.fill();
-                mouseCtx.globalAlpha = 1;
-            }
+// ========== 滚动观察器 ==========
+const ro = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.pop-in,.char-reveal').forEach(el => ro.observe(el));
 
-            // 限制粒子数量
-            if (mouseParticles.length > 100) {
-                mouseParticles.splice(0, mouseParticles.length - 100);
-            }
+// ========== 计数器 ==========
+const co = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) { const el = e.target, t = parseInt(el.dataset.target); let c = 0; const s = Math.ceil(t / 50); const tm = setInterval(() => { c += s; if (c >= t) { c = t; clearInterval(tm); } el.textContent = c.toLocaleString(); el.style.animation = 'stat-bounce 0.3s ease'; setTimeout(() => el.style.animation = '', 300); }, 30); co.unobserve(el); } }); }, { threshold: 0.5 });
+document.querySelectorAll('.counter').forEach(el => co.observe(el));
 
-            requestAnimationFrame(animateMouseParticles);
-        }
-        animateMouseParticles();
+// ========== 一键添加 ==========
+let aic = 1, wic = 1;
+function addArticle() { const t = prompt('请输入文章标题：'); if (!t || !t.trim()) return; const d = prompt('请输入文章简介：', '这是一篇新的文章...'); const f = prompt('请输入文件名：', t.trim().replace(/\s+/g, '-').toLowerCase() + '.html'); const dt = new Date().toISOString().split('T')[0]; const s = 'article-new-' + aic++; const g = document.getElementById('articlesGrid'); const ab = g.querySelector('.add-btn'); const c = document.createElement('a'); c.href = f || '#'; c.className = 'flip-card block reveal card-spotlight'; c.style.textDecoration = 'none'; c.onmousemove = function(e) { trackSpotlight(e, this); }; c.onmouseleave = function() { resetSpotlight(this); }; c.innerHTML = `<div class="flip-card-inner flip-article-h" style="min-height:340px"><div class="flip-card-front glass rounded-2xl overflow-hidden h-full"><div class="relative flip-article-img overflow-hidden" style="height:220px"><img src="https://picsum.photos/seed/${s}/600/300.jpg" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110" alt="封面"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div><div class="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4"><h3 class="text-base sm:text-lg font-semibold text-white line-clamp-2 drop-shadow-lg">${t.trim()}</h3></div></div><div class="p-3 sm:p-4 flex items-center justify-between text-[10px] sm:text-xs" style="color:var(--text-muted)"><span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:calendar" data-width="12"></span>${dt}</span><span class="flex items-center gap-1"><span class="iconify" data-icon="lucide:clock" data-width="12"></span>5 min</span></div></div><div class="flip-card-back rounded-2xl p-5 sm:p-6 flex flex-col justify-center" style="border:1px solid var(--border-glass)"><h3 class="text-base sm:text-lg font-semibold mb-2 sm:mb-3" style="color:var(--text-primary)">${t.trim()}</h3><p class="text-xs sm:text-sm font-light leading-relaxed mb-4 sm:mb-5" style="color:var(--text-secondary)">${d || '暂无简介...'}</p><div class="flex items-center gap-2 text-indigo-400 text-xs sm:text-sm font-medium group"><span>阅读全文</span><span class="iconify group-hover:translate-x-1 transition-transform" data-icon="lucide:arrow-right" data-width="16"></span></div></div></div>`; g.insertBefore(c, ab); c.classList.add('visible'); showToast('文章「' + t.trim() + '」已添加'); }
+function addWork() { const t = prompt('请输入作品标题：'); if (!t || !t.trim()) return; const d = prompt('请输入作品简介：', '一个新的交互实验项目'); const tg = prompt('请输入标签（逗号分隔）：', 'Canvas,ES6'); const f = prompt('请输入文件名：', t.trim().replace(/\s+/g, '-').toLowerCase() + '.html'); const s = 'work-new-' + wic++; const g = document.getElementById('worksGrid'); const ab = g.querySelector('.add-btn'); const ta = tg ? tg.split(',').map(t => t.trim()) : ['Demo']; const th = ta.map(t => `<span class="tag">${t}</span>`).join(''); const c = document.createElement('a'); c.href = f || '#'; c.className = 'flip-card block reveal card-spotlight'; c.style.textDecoration = 'none'; c.onmousemove = function(e) { trackSpotlight(e, this); }; c.onmouseleave = function() { resetSpotlight(this); }; c.innerHTML = `<div class="flip-card-inner flip-work-h" style="min-height:400px"><div class="flip-card-front glass rounded-2xl overflow-hidden h-full"><div class="relative flip-work-img overflow-hidden" style="height:240px"><img src="https://picsum.photos/seed/${s}/800/400.jpg" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105" alt="封面"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div><div class="absolute bottom-3 sm:bottom-4 left-4 sm:left-5 right-4 sm:right-5"><div class="flex gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">${th}</div><h3 class="text-lg sm:text-xl font-semibold text-white drop-shadow-lg">${t.trim()}</h3></div></div><div class="p-3 sm:p-4"><p class="text-xs sm:text-sm font-light" style="color:var(--text-secondary)">${(d || '暂无简介').substring(0, 60)}...</p></div></div><div class="flip-card-back rounded-2xl p-5 sm:p-6 flex flex-col justify-center" style="border:1px solid var(--border-glass)"><div class="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">${th}</div><h3 class="text-lg sm:text-xl font-semibold mb-2 sm:mb-3" style="color:var(--text-primary)">${t.trim()}</h3><p class="text-xs sm:text-sm font-light leading-relaxed mb-4 sm:mb-5" style="color:var(--text-secondary)">${d || '暂无简介'}</p><div class="flex items-center gap-2 text-indigo-400 text-xs sm:text-sm font-medium group"><span>查看演示</span><span class="iconify group-hover:translate-x-1 transition-transform" data-icon="lucide:external-link" data-width="16"></span></div></div></div>`; g.insertBefore(c, ab); c.classList.add('visible'); showToast('作品「' + t.trim() + '」已添加'); }
 
-        // ========== 文章卡片Canvas背景 ==========
-        function createArticleCanvas(canvasId, type) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = canvas.offsetWidth * 2;
-            canvas.height = canvas.offsetHeight * 2;
-            ctx.scale(2, 2);
+// ========== 涟漪 ==========
+document.querySelectorAll('.ripple').forEach(el => { el.addEventListener('click', function(e) { const r = document.createElement('span'); r.classList.add('ripple-effect'); const rect = this.getBoundingClientRect(); const sz = Math.max(rect.width, rect.height); r.style.width = r.style.height = sz + 'px'; r.style.left = e.clientX - rect.left - sz / 2 + 'px'; r.style.top = e.clientY - rect.top - sz / 2 + 'px'; this.appendChild(r); setTimeout(() => r.remove(), 600); }); });
 
-            let time = 0;
+// ========== 返回顶部 ==========
+const bb = document.getElementById('backToTop');
+window.addEventListener('scroll', () => { if (window.scrollY > 400) { bb.style.opacity = '1'; bb.style.pointerEvents = 'auto'; } else { bb.style.opacity = '0'; bb.style.pointerEvents = 'none'; } });
 
-            function draw() {
-                const width = canvas.width / 2;
-                const height = canvas.height / 2;
-                
-                ctx.fillStyle = '#0a0a0c';
-                ctx.fillRect(0, 0, width, height);
-
-                if (type === 1) {
-                    // 网格 + 移动光线
-                    ctx.strokeStyle = 'rgba(212, 168, 83, 0.1)';
-                    ctx.lineWidth = 1;
-                    for (let x = 0; x < width; x += 30) {
-                        ctx.beginPath();
-                        ctx.moveTo(x, 0);
-                        ctx.lineTo(x, height);
-                        ctx.stroke();
-                    }
-                    for (let y = 0; y < height; y += 30) {
-                        ctx.beginPath();
-                        ctx.moveTo(0, y);
-                        ctx.lineTo(width, y);
-                        ctx.stroke();
-                    }
-
-                    // 移动的光点
-                    const lightX = (time * 2) % width;
-                    const gradient = ctx.createRadialGradient(lightX, height / 2, 0, lightX, height / 2, 80);
-                    gradient.addColorStop(0, 'rgba(212, 168, 83, 0.5)');
-                    gradient.addColorStop(1, 'rgba(212, 168, 83, 0)');
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, width, height);
-                } else if (type === 2) {
-                    // 同心圆波纹
-                    for (let i = 0; i < 5; i++) {
-                        const radius = ((time + i * 40) % 200);
-                        ctx.beginPath();
-                        ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
-                        ctx.strokeStyle = `rgba(78, 205, 196, ${0.3 - radius / 700})`;
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-                    }
-                } else if (type === 3) {
-                    // 粒子场
-                    for (let i = 0; i < 30; i++) {
-                        const x = (Math.sin(time * 0.01 + i) * 0.5 + 0.5) * width;
-                        const y = (Math.cos(time * 0.01 + i * 0.7) * 0.5 + 0.5) * height;
-                        
-                        ctx.beginPath();
-                        ctx.arc(x, y, 2, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(224, 122, 95, ${0.3 + Math.sin(time * 0.05 + i) * 0.2})`;
-                        ctx.fill();
-
-                        // 连线
-                        for (let j = i + 1; j < 30; j++) {
-                            const x2 = (Math.sin(time * 0.01 + j) * 0.5 + 0.5) * width;
-                            const y2 = (Math.cos(time * 0.01 + j * 0.7) * 0.5 + 0.5) * height;
-                            const dist = Math.sqrt((x - x2) ** 2 + (y - y2) ** 2);
-                            if (dist < 80) {
-                                ctx.beginPath();
-                                ctx.moveTo(x, y);
-                                ctx.lineTo(x2, y2);
-                                ctx.strokeStyle = `rgba(224, 122, 95, ${(1 - dist / 80) * 0.2})`;
-                                ctx.stroke();
-                            }
-                        }
-                    }
-                }
-
-                time++;
-                requestAnimationFrame(draw);
-            }
-            draw();
-        }
-
-        // 延迟初始化文章Canvas
-        setTimeout(() => {
-            createArticleCanvas('articleCanvas1', 1);
-            createArticleCanvas('articleCanvas2', 2);
-            createArticleCanvas('articleCanvas3', 3);
-        }, 100);
-
-        // ========== 交互演示区粒子系统 ==========
-        const demoCanvas = document.getElementById('demoCanvas');
-        const demoCtx = demoCanvas.getContext('2d');
-        let demoMouseX = 0, demoMouseY = 0;
-        const demoParticles = [];
-        let lastTime = performance.now();
-        let frameCount = 0;
-        let fps = 0;
-
-        function resizeDemoCanvas() {
-            demoCanvas.width = demoCanvas.offsetWidth * 2;
-            demoCanvas.height = demoCanvas.offsetHeight * 2;
-            demoCtx.scale(2, 2);
-        }
-        resizeDemoCanvas();
-
-        // 初始化粒子
-        function initDemoParticles() {
-            demoParticles.length = 0;
-            const width = demoCanvas.width / 2;
-            const height = demoCanvas.height / 2;
-            
-            for (let i = 0; i < 200; i++) {
-                demoParticles.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    size: 2 + Math.random() * 3,
-                    baseSize: 2 + Math.random() * 3,
-                    color: `hsl(${30 + Math.random() * 30}, 70%, 60%)`
-                });
-            }
-        }
-        initDemoParticles();
-
-        demoCanvas.addEventListener('mousemove', (e) => {
-            const rect = demoCanvas.getBoundingClientRect();
-            demoMouseX = e.clientX - rect.left;
-            demoMouseY = e.clientY - rect.top;
-        });
-
-        demoCanvas.addEventListener('mouseleave', () => {
-            demoMouseX = -1000;
-            demoMouseY = -1000;
-        });
-
-        function animateDemo() {
-            const width = demoCanvas.width / 2;
-            const height = demoCanvas.height / 2;
-
-            // 清除画布
-            demoCtx.fillStyle = '#0a0a0c';
-            demoCtx.fillRect(0, 0, width, height);
-
-            // 绘制背景网格
-            demoCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-            demoCtx.lineWidth = 1;
-            for (let x = 0; x < width; x += 40) {
-                demoCtx.beginPath();
-                demoCtx.moveTo(x, 0);
-                demoCtx.lineTo(x, height);
-                demoCtx.stroke();
-            }
-            for (let y = 0; y < height; y += 40) {
-                demoCtx.beginPath();
-                demoCtx.moveTo(0, y);
-                demoCtx.lineTo(width, y);
-                demoCtx.stroke();
-            }
-
-            // 更新和绘制粒子
-            demoParticles.forEach(p => {
-                // 鼠标吸引
-                if (demoMouseX > 0 && demoMouseY > 0) {
-                    const dx = demoMouseX - p.x;
-                    const dy = demoMouseY - p.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist < 150) {
-                        const force = (150 - dist) / 150;
-                        p.vx += dx * force * 0.01;
-                        p.vy += dy * force * 0.01;
-                        p.size = p.baseSize + force * 4;
-                    } else {
-                        p.size += (p.baseSize - p.size) * 0.1;
-                    }
-                }
-
-                // 应用速度
-                p.x += p.vx;
-                p.y += p.vy;
-
-                // 阻尼
-                p.vx *= 0.98;
-                p.vy *= 0.98;
-
-                // 边界反弹
-                if (p.x < 0 || p.x > width) p.vx *= -1;
-                if (p.y < 0 || p.y > height) p.vy *= -1;
-                p.x = Math.max(0, Math.min(width, p.x));
-                p.y = Math.max(0, Math.min(height, p.y));
-
-                // 绘制粒子
-                demoCtx.beginPath();
-                demoCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                demoCtx.fillStyle = p.color;
-                demoCtx.fill();
-            });
-
-            // 绘制连线
-            demoCtx.strokeStyle = 'rgba(212, 168, 83, 0.1)';
-            demoCtx.lineWidth = 1;
-            for (let i = 0; i < demoParticles.length; i++) {
-                for (let j = i + 1; j < demoParticles.length; j++) {
-                    const dx = demoParticles[i].x - demoParticles[j].x;
-                    const dy = demoParticles[i].y - demoParticles[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist < 60) {
-                        demoCtx.beginPath();
-                        demoCtx.moveTo(demoParticles[i].x, demoParticles[i].y);
-                        demoCtx.lineTo(demoParticles[j].x, demoParticles[j].y);
-                        demoCtx.stroke();
-                    }
-                }
-            }
-
-            // 绘制鼠标光晕
-            if (demoMouseX > 0 && demoMouseY > 0) {
-                const gradient = demoCtx.createRadialGradient(demoMouseX, demoMouseY, 0, demoMouseX, demoMouseY, 100);
-                gradient.addColorStop(0, 'rgba(78, 205, 196, 0.2)');
-                gradient.addColorStop(1, 'rgba(78, 205, 196, 0)');
-                demoCtx.fillStyle = gradient;
-                demoCtx.fillRect(0, 0, width, height);
-            }
-
-            // 更新统计
-            frameCount++;
-            const now = performance.now();
-            if (now - lastTime >= 1000) {
-                fps = frameCount;
-                frameCount = 0;
-                lastTime = now;
-            }
-
-            document.getElementById('particleCount').textContent = demoParticles.length;
-            document.getElementById('fps').textContent = fps;
-
-            requestAnimationFrame(animateDemo);
-        }
-        animateDemo();
-
-        // ========== 滚动显示动画 ==========
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.reveal, .timeline-item').forEach(el => {
-            observer.observe(el);
-        });
-
-        // ========== 表单提交 ==========
-        document.getElementById('contactForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const btn = e.target.querySelector('.submit-btn');
-            const originalText = btn.textContent;
-            btn.textContent = '信号已发送';
-            btn.style.background = 'var(--gradient-cool)';
-            
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = 'var(--gradient-warm)';
-                e.target.reset();
-            }, 2000);
-        });
-
-        // ========== 平滑滚动 ==========
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // ========== 窗口大小变化处理 ==========
-        window.addEventListener('resize', () => {
-            resizeDemoCanvas();
-            initDemoParticles();
-        });
-    </script>
+// ========== Hero光晕 ==========
+document.addEventListener('mousemove', e => { const glow = document.getElementById('heroGlow'); const hero = document.getElementById('hero'); const rect = hero.getBoundingClientRect(); if (e.clientY < rect.bottom) { glow.style.left = e.clientX + 'px'; glow.style.top = (e.clientY - rect.top - 200) + 'px'; } });
+</script>
 </body>
 </html>
