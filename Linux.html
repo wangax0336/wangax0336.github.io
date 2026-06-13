@@ -1,748 +1,1201 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Linux</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linux.BOOK</title>
+  <style>
+    :root {
+      --bg-color: #0a0e17;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --accent-cyan: #22d3ee;
+      --accent-purple: #a78bfa;
+      --accent-amber: #fbbf24;
+      --accent-green: #34d399;
+      --accent-red: #f87171;
+      --code-bg: #1e293b;
+      --border-color: #334155;
+      --sidebar-width: 280px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
-    <!-- 引入 Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* 特效画布 */
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: -1;
+      opacity: 0.6;
+    }
+
+    /* =========================================
+       主视觉区域 (HERO SECTION) 增强特效
+       ========================================= */
+    .hero-section {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+      z-index: 1;
+      /* 修复被侧边栏遮挡的关键代码 */
+      padding-left: var(--sidebar-width);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      max-width: 800px;
+      padding: 2rem;
+    }
+
+    /* 网格背景 */
+    .hero-grid {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+
+    /* 径向光晕 */
+    .hero-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.3;
+      animation: glowPulse 8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    .glow-1 { background: var(--accent-cyan); top: -100px; left: 20%; }
+    .glow-2 { background: var(--accent-purple); bottom: -100px; right: 10%; animation-delay: 4s; }
+
+    @keyframes glowPulse {
+      0% { transform: scale(1); opacity: 0.2; }
+      100% { transform: scale(1.3); opacity: 0.4; }
+    }
+
+    /* 扫描线 */
+    .scanline {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+      background-size: 100% 4px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .scan-beam {
+      position: absolute;
+      width: 100%; height: 100px;
+      background: linear-gradient(to bottom, transparent, rgba(34, 211, 238, 0.1), transparent);
+      animation: scanBeam 4s ease-in-out infinite;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    @keyframes scanBeam {
+      0%, 100% { top: -100px; opacity: 0; }
+      50% { top: 100%; opacity: 1; }
+    }
+
+    /* 全息文字特效 */
+    .holo-text {
+      font-size: 4.5rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 6px;
+      position: relative;
+      color: transparent;
+      background: linear-gradient(135deg, #e2e8f0, #22d3ee, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: holographic 3s infinite;
+      text-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+    }
+
+    @keyframes holographic {
+      0%, 100% { text-shadow: 2px 0 #f87171, -2px 0 #22d3ee; filter: brightness(1); }
+      25% { text-shadow: -2px 0 #f87171, 2px 0 #22d3ee; }
+      50% { text-shadow: 0 0 #f87171, 0 0 #22d3ee; filter: brightness(1.2); }
+      75% { text-shadow: 2px -2px #f87171, -2px 2px #22d3ee; }
+    }
+
+    .holo-glitch {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: inherit;
+      -webkit-background-clip: inherit;
+      background-clip: inherit;
+      z-index: -1;
+    }
+
+    .holo-glitch::before, .holo-glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: inherit;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .holo-glitch::before {
+      animation: glitch-1 2s infinite linear alternate-reverse;
+      clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+    }
+
+    .holo-glitch::after {
+      animation: glitch-2 3s infinite linear alternate-reverse;
+      clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+    }
+
+    @keyframes glitch-1 {
+      0% { transform: translate(0); }
+      20% { transform: translate(-3px, 3px); }
+      40% { transform: translate(-3px, -3px); }
+      60% { transform: translate(3px, 3px); }
+      80% { transform: translate(3px, -3px); }
+      100% { transform: translate(0); }
+    }
+
+    @keyframes glitch-2 {
+      0% { transform: translate(0); }
+      20% { transform: translate(3px, -3px); }
+      40% { transform: translate(3px, 3px); }
+      60% { transform: translate(-3px, -3px); }
+      80% { transform: translate(-3px, 3px); }
+      100% { transform: translate(0); }
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-top: 1.5rem;
+      letter-spacing: 3px;
+      animation: fadeInUp 1s ease-out 0.5s both;
+    }
+
+    .hero-realtime-badge {
+      margin-top: 1rem;
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border: 1px solid var(--accent-green);
+      border-radius: 999px;
+      color: var(--accent-green);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: rgba(52, 211, 153, 0.1);
+      animation: pulse-badge 2s infinite, fadeInUp 1s ease-out 0.8s both;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+      50% { box-shadow: 0 0 10px 4px rgba(52, 211, 153, 0.1); }
+    }
+
+    .hero-cta {
+      margin-top: 3rem;
+      display: inline-block;
+      padding: 1rem 2.5rem;
+      color: var(--bg-color);
+      background: var(--accent-cyan);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-decoration: none;
+      clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+      transition: all 0.3s;
+      animation: fadeInUp 1s ease-out 1.1s both;
+    }
+
+    .hero-cta:hover {
+      background: #fff;
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(34, 211, 238, 0.4);
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 侧边栏 */
+    .sidebar {
+      position: fixed;
+      left: 0; top: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: rgba(10, 14, 23, 0.85); /* 增强遮罩不透明度防止文字穿透 */
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border-color);
+      z-index: 100;
+      overflow-y: auto;
+      padding: 2rem 1.5rem;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #e2e8f0, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-nav {
+      list-style: none;
+    }
+
+    .sidebar-nav li { margin-bottom: 0.5rem; }
+
+    .sidebar-nav a {
+      display: block;
+      text-decoration: none;
+      color: var(--text-secondary);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+      border-left: 2px solid transparent;
+    }
+
+    .sidebar-nav a:hover {
+      color: var(--accent-cyan);
+      background: rgba(34, 211, 238, 0.05);
+      border-left-color: var(--accent-cyan);
+    }
+
+    .sidebar-nav a.active {
+      color: var(--accent-cyan);
+      background: rgba(34, 211, 238, 0.1);
+      border-left-color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    .nav-section-title {
+      font-size: 0.7rem;
+      color: var(--accent-purple);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      padding-left: 0.75rem;
+    }
+
+    /* 主内容区 */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 3rem 4rem;
+      max-width: 960px;
+    }
+
+    /* 全局特效类 */
+    .highlight-critical {
+      color: var(--accent-red);
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+    }
     
-    <!-- 引入 Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- 引入 GSAP 用于高性能动画 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    .highlight-important {
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
 
-    <!-- 配置 Tailwind 主题颜色 -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'neon-green': '#00ff9d',
-                        'neon-blue': '#00d0ff',
-                        'neon-purple': '#bd00ff',
-                        'dark-bg': '#050510',
-                        'glass': 'rgba(10, 10, 20, 0.6)',
-                    },
-                    fontFamily: {
-                        mono: ['"Fira Code"', '"Courier New"', 'monospace'],
-                        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'neon-green': '0 0 15px #00ff9d33',
-                        'neon-blue': '0 0 15px #00d0ff33',
-                    }
-                }
-            }
-        }
-    </script>
+    .highlight-keyword {
+      color: var(--accent-cyan);
+      font-family: 'Courier New', Courier, monospace;
+      background: rgba(34, 211, 238, 0.1);
+      padding: 1px 5px;
+      border-radius: 4px;
+      border-bottom: 1px dashed var(--accent-cyan);
+    }
 
-    <style>
-        /* 全局样式覆盖 */
-        body {
-            margin: 0;
-            overflow-x: hidden;
-            background-color: #050510;
-            color: #ffffff;
-            font-family: 'Segoe UI', sans-serif;
-        }
+    .highlight-note {
+      color: var(--accent-purple);
+      font-style: italic;
+    }
 
-        /* 滚动条美化 */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #050510;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #00ff9d;
-        }
+    /* 章节排版 */
+    .chapter-header {
+      margin-top: 5rem;
+      margin-bottom: 2.5rem;
+      border-left: 4px solid var(--accent-cyan);
+      padding-left: 1.5rem;
+    }
 
-        /* Three.js Canvas 容器 */
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: all; 
-        }
+    .chapter-header:first-of-type { margin-top: 0; }
 
-        /* 玻璃拟态卡片基础 */
-        .glass-card {
-            background: rgba(20, 20, 30, 0.4);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: border-color 0.3s ease;
-            overflow: hidden;
-        }
+    .chapter-num {
+      font-size: 0.875rem;
+      letter-spacing: 4px;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
 
-        /* 3D 倾斜卡片样式 */
-        .tilt-card {
-            transform-style: preserve-3d;
-            transform: perspective(1000px);
-            will-change: transform;
-        }
-        
-        .tilt-card-content {
-            transform: translateZ(30px);
-        }
+    .chapter-title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #e2e8f0, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
 
-        /* 光效层 */
-        .tilt-glare {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.15), transparent 40%);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            mix-blend-mode: overlay;
-        }
+    .chapter-desc {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      line-height: 1.8;
+    }
 
-        .tilt-card:hover .tilt-glare {
-            opacity: 1;
-        }
-        
-        .tilt-card:hover {
-            border-color: rgba(0, 255, 157, 0.3);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
+    .content-block { margin-bottom: 2.5rem; }
 
-        /* 故障文字效果 */
-        .glitch-text {
-            position: relative;
-        }
-        .glitch-text::before,
-        .glitch-text::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #050510;
-        }
-        .glitch-text::before {
-            left: 2px;
-            text-shadow: -1px 0 #ff0055;
-            clip: rect(24px, 550px, 90px, 0);
-            animation: glitch-anim-2 3s infinite linear alternate-reverse;
-        }
-        .glitch-text::after {
-            left: -2px;
-            text-shadow: -1px 0 #00d0ff;
-            clip: rect(85px, 550px, 140px, 0);
-            animation: glitch-anim 2.5s infinite linear alternate-reverse;
-        }
+    .block-title {
+      font-size: 1.2rem;
+      color: var(--accent-purple);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+    }
 
-        @keyframes glitch-anim {
-            0% { clip: rect(11px, 9999px, 32px, 0); }
-            20% { clip: rect(98px, 9999px, 5px, 0); }
-            40% { clip: rect(22px, 9999px, 86px, 0); }
-            60% { clip: rect(55px, 9999px, 12px, 0); }
-            80% { clip: rect(4px, 9999px, 77px, 0); }
-            100% { clip: rect(66px, 9999px, 33px, 0); }
-        }
-        @keyframes glitch-anim-2 {
-            0% { clip: rect(65px, 9999px, 96px, 0); }
-            20% { clip: rect(12px, 9999px, 48px, 0); }
-            40% { clip: rect(87px, 9999px, 3px, 0); }
-            60% { clip: rect(33px, 9999px, 56px, 0); }
-            80% { clip: rect(89px, 9999px, 21px, 0); }
-            100% { clip: rect(1px, 9999px, 61px, 0); }
-        }
+    .block-title::before {
+      content: '§';
+      margin-right: 0.5rem;
+      font-size: 1.4rem;
+      opacity: 0.6;
+    }
 
-        /* 代码块光标闪烁 */
-        .cursor-blink {
-            animation: blink 1s step-end infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
+    p { margin-bottom: 1rem; }
 
-        /* 语法高亮颜色 */
-        .token-keyword { color: #ff0055; }
-        .token-string { color: #00ff9d; }
-        .token-function { color: #00d0ff; }
-        .token-comment { color: #666; font-style: italic; }
+    ul.feature-list { list-style: none; }
 
-        /* 目录折叠动画 */
-        .toc-toggle {
-            transition: all 0.3s ease;
-        }
-        .toc-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        .toc-content.open {
-            max-height: 2000px;
-        }
+    ul.feature-list li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.6rem;
+    }
 
-        /* 锚点平滑滚动 */
-        html {
-            scroll-behavior: smooth;
-        }
+    ul.feature-list li::before {
+      content: '>';
+      position: absolute;
+      left: 0;
+      color: var(--accent-cyan);
+      font-weight: bold;
+    }
 
-        /* 代码块样式 */
-        .code-block {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            padding: 16px;
-            font-family: 'Fira Code', 'Courier New', monospace;
-            font-size: 0.875rem;
-            line-height: 1.6;
-            overflow-x: auto;
-            position: relative;
-        }
+    /* 代码特效模块 */
+    .code-module {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin: 2rem 0;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      position: relative;
+    }
 
-        .code-block::before {
-            content: attr(data-lang);
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 0.75rem;
-            color: #666;
-            font-family: sans-serif;
-        }
-    </style>
+    .code-module::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple), var(--accent-amber));
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .code-dots { display: flex; gap: 6px; }
+    .code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+    .code-dots span:nth-child(1) { background: #f87171; }
+    .code-dots span:nth-child(2) { background: #fbbf24; }
+    .code-dots span:nth-child(3) { background: #34d399; }
+
+    .code-filename {
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    pre.code-content {
+      padding: 1.5rem;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      color: #d1d5db;
+    }
+
+    .code-comment { color: #6b7280; }
+    .code-keyword { color: #c084fc; }
+    .code-string { color: #34d399; }
+    .code-command { color: #22d3ee; font-weight: bold; }
+    .code-param { color: #fbbf24; }
+    .code-variable { color: #f87171; }
+
+    .table-wrapper { overflow-x: auto; margin: 1.5rem 0; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+
+    th {
+      background: rgba(34, 211, 238, 0.1);
+      color: var(--accent-cyan);
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .footer {
+      margin-top: 8rem;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 2rem 1.5rem; }
+      .hero-section { padding-left: 0; }
+      .menu-toggle { display: block !important; }
+      .holo-text { font-size: 2.2rem; letter-spacing: 2px; }
+    }
+
+    .menu-toggle {
+      display: none;
+      position: fixed;
+      top: 1rem; left: 1rem;
+      z-index: 200;
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      color: var(--accent-cyan);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+  </style>
 </head>
-<body class="antialiased selection:bg-neon-green selection:text-black">
+<body>
 
-    <!-- 3D Shader 背景 -->
-    <div id="canvas-container"></div>
+  <!-- 背景特效画布 -->
+  <canvas id="bg-canvas"></canvas>
 
-    <!-- 导航栏 -->
-    <nav class="fixed top-0 w-full z-50 glass-card border-b-0 border-white/10 h-16 flex items-center justify-between px-6 lg:px-12">
-        <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-neon-green rounded-full shadow-neon-green animate-pulse"></div>
-            <span class="text-xl font-bold font-mono tracking-widest text-white">Linux<span class="text-neon-green">.BOOK</span></span>
-        </div>
-        <div class="hidden md:flex gap-8 font-mono text-sm">
-            <a href="#toc" class="hover:text-neon-green transition-colors">目录</a>
-            <a href="#chapter-1" class="hover:text-neon-blue transition-colors">第1章</a>
-            <a href="#chapter-2" class="hover:text-neon-purple transition-colors">第2章</a>
-            <a href="#chapter-3" class="hover:text-neon-blue transition-colors">第3章</a>
-        </div>
-    </nav>
+  <!-- 移动端菜单按钮 -->
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
 
-    <!-- 主视觉区域 -->
-    <header class="min-h-screen flex flex-col justify-center items-center relative pt-16 px-4">
-        <div class="text-center z-10 max-w-5xl">
-            <p class="font-mono text-neon-blue mb-4 tracking-[0.2em] text-sm md:text-base opacity-0 animate-up" id="tagline">
-                > SYSTEM_READY: READING_BOOK...
-            </p>
-            <h1 class="text-5xl md:text-8xl font-black mb-6 tracking-tighter leading-none opacity-0 animate-up glitch-text" data-text="THE BASICS OF Linux">
-                THE BASICS OF<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-blue">Linux</span>
-            </h1>
-            <p class="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed opacity-0 animate-up font-light">
-                一本关于Linux的基础知识的数字图书<br>
-                <span class="text-neon-green font-mono text-sm mt-2 block">Rendered in Real-time</span>
-            </p>
-            
-            <div class="flex flex-col md:flex-row gap-4 justify-center items-center opacity-0 animate-up">
-                <a href="#toc" class="group relative px-8 py-3 bg-neon-green text-black font-bold font-mono overflow-hidden">
-                    <span class="relative z-10 group-hover:text-white transition-colors duration-300">START</span>
-                    <div class="absolute inset-0 bg-black transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 ease-out"></div>
-                </a>
-            </div>
-        </div>
-    </header>
-
-    <!-- 目录部分 -->
-    <section id="toc" class="py-24 px-4 relative">
-        <div class="max-w-4xl mx-auto">
-            <div class="glass-card rounded-lg p-8">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-3xl font-bold font-mono text-white">目录 <span class="text-neon-green">CONTENTS</span></h2>
-                    <button id="toc-toggle" class="toc-toggle bg-neon-green/20 border border-neon-green/50 text-neon-green px-4 py-2 text-xs font-mono hover:bg-neon-green hover:text-black transition-all">
-                        [展开目录]
-                    </button>
-                </div>
-                
-                <div id="toc-content" class="toc-content">
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="#chapter-1" class="flex items-center gap-3 p-3 rounded hover:bg-white/5 transition-colors group">
-                                <span class="text-neon-green font-mono text-xs">01</span>
-                                <span class="text-gray-300 group-hover:text-neon-blue transition-colors">第一章：系统架构基础</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#chapter-2" class="flex items-center gap-3 p-3 rounded hover:bg-white/5 transition-colors group">
-                                <span class="text-neon-blue font-mono text-xs">02</span>
-                                <span class="text-gray-300 group-hover:text-neon-blue transition-colors">第二章：WebGL 可视化引擎</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#chapter-3" class="flex items-center gap-3 p-3 rounded hover:bg-white/5 transition-colors group">
-                                <span class="text-neon-purple font-mono text-xs">03</span>
-                                <span class="text-gray-300 group-hover:text-neon-blue transition-colors">第三章：异步编程与性能优化</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 正文内容 -->
-    <main class="relative">
-        
-        <!-- 第一章 -->
-        <section id="chapter-1" class="py-24 px-4">
-            <div class="max-w-6xl mx-auto">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    <!-- 文字描述 -->
-                    <div class="lg:col-span-5">
-                        <div class="glass-card rounded-lg p-8 h-full">
-                            <div class="flex items-center gap-3 mb-6">
-                                <span class="text-neon-green font-mono text-xs border border-neon-green/30 px-2 py-1 rounded">CHAPTER 01</span>
-                                <span class="text-gray-500 font-mono text-xs">系统架构基础</span>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-4">现代全栈架构设计</h3>
-                            <p class="text-gray-400 leading-relaxed mb-4">
-                                在构建高性能Web应用时，架构设计是决定系统成败的关键因素。本章将深入探讨模块化设计原则、微服务架构模式以及前后端分离的最佳实践。
-                            </p>
-                            <p class="text-gray-400 leading-relaxed mb-4">
-                                核心要点包括：清晰的职责划分、高内聚低耦合的模块设计、以及可扩展的API设计规范。通过合理的架构，我们可以确保系统在复杂业务场景下的稳定性和可维护性。
-                            </p>
-                            <p class="text-gray-400 leading-relaxed">
-                                代码示例展示了如何构建一个基础的微服务架构，包含服务注册、健康检查和请求路由等核心组件。
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- 代码展示 -->
-                    <div class="lg:col-span-7">
-                        <div class="glass-card rounded-lg overflow-hidden">
-                            <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/10">
-                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                                <span class="ml-4 text-xs text-gray-500 font-mono">microservice-arch.js</span>
-                            </div>
-                            <div class="p-6">
-                                <div class="code-block" data-lang="javascript">
-<pre><span class="token-comment">// 微服务架构核心实现</span>
-<span class="token-keyword">class</span> <span class="token-function">MicroService</span> {
-  <span class="token-function">constructor</span>(name, port) {
-    <span class="token-keyword">this</span>.name = name;
-    <span class="token-keyword">this</span>.port = port;
-    <span class="token-keyword">this</span>.healthCheck = <span class="token-function">() =></span> {
-      <span class="token-keyword">return</span> { 
-        status: <span class="token-string">'healthy'</span>, 
-        uptime: process.uptime() 
-      };
-    };
-  }
-
-  <span class="token-function">start</span>() {
-    <span class="token-keyword">const</span> server = <span class="token-function">http</span>.createServer(<span class="token-keyword">this</span>.handleRequest);
-    server.<span class="token-function">listen</span>(<span class="token-keyword">this</span>.port, () => {
-      console.<span class="token-function">log</span>(<span class="token-string">`Service ${<span class="token-keyword">this</span>.name} running on port ${<span class="token-keyword">this</span>.port}`</span>);
-    });
-  }
-
-  <span class="token-function">handleRequest</span>(req, res) {
-    res.<span class="token-function">endJSON</span>({ 
-      message: <span class="token-string">'OK'</span>, 
-      service: <span class="token-keyword">this</span>.name 
-    });
-  }
-}
-
-<span class="token-comment">// 服务注册中心</span>
-<span class="token-keyword">const</span> registry = <span class="token-keyword">new</span> <span class="token-function">ServiceRegistry</span>();
-registry.<span class="token-function">register</span>(<span class="token-keyword">new</span> <span class="token-function">MicroService</span>(<span class="token-string">'auth'</span>, 3001));
-registry.<span class="token-function">register</span>(<span class="token-keyword">new</span> <span class="token-function">MicroService</span>(<span class="token-string">'data'</span>, 3002));</pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 第二章 -->
-        <section id="chapter-2" class="py-24 px-4 bg-black/20">
-            <div class="max-w-6xl mx-auto">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    <!-- 文字描述 -->
-                    <div class="lg:col-span-5">
-                        <div class="glass-card rounded-lg p-8 h-full">
-                            <div class="flex items-center gap-3 mb-6">
-                                <span class="text-neon-blue font-mono text-xs border border-neon-blue/30 px-2 py-1 rounded">CHAPTER 02</span>
-                                <span class="text-gray-500 font-mono text-xs">WebGL 可视化</span>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-4">实时渲染引擎设计</h3>
-                            <p class="text-gray-400 leading-relaxed mb-4">
-                                WebGL 2.0 为前端开发带来了强大的图形渲染能力。本章将详细讲解如何构建自定义渲染管线，实现高性能的 3D 可视化效果。
-                            </p>
-                            <p class="text-gray-400 leading-relaxed mb-4">
-                                重点包括：Shader 编写基础、几何体优化、纹理映射、后处理效果以及性能优化技巧。通过实战案例，展示如何创建流畅的 60fps 渲染体验。
-                            </p>
-                            <p class="text-gray-400 leading-relaxed">
-                                代码示例展示了一个基础的 WebGL 渲染器实现，包含顶点着色器和片段着色器的核心逻辑。
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- 代码展示 -->
-                    <div class="lg:col-span-7">
-                        <div class="glass-card rounded-lg overflow-hidden">
-                            <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/10">
-                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                                <span class="ml-4 text-xs text-gray-500 font-mono">webgl-renderer.js</span>
-                            </div>
-                            <div class="p-6">
-                                <div class="code-block" data-lang="javascript">
-<pre><span class="token-comment">// WebGL 渲染器核心类</span>
-<span class="token-keyword">class</span> <span class="token-function">WebGLRenderer</span> {
-  <span class="token-function">constructor</span>(canvas) {
-    <span class="token-keyword">this</span>.gl = canvas.<span class="token-function">getContext</span>(<span class="token-string">'webgl2'</span>);
-    <span class="token-keyword">this</span>.<span class="token-function">initShaders</span>();
-    <span class="token-keyword">this</span>.<span class="token-function">createBuffers</span>();
-  }
-
-  <span class="token-function">initShaders</span>() {
-    <span class="token-keyword">const</span> vsSource = `
-      <span class="token-keyword">attribute</span> vec3 aPosition;
-      <span class="token-keyword">void</span> <span class="token-function">main</span>() {
-        gl_Position = vec4(aPosition, 1.0);
-      }
-    `;
-    
-    <span class="token-keyword">const</span> fsSource = `
-      <span class="token-keyword">precision</span> mediump float;
-      <span class="token-keyword">void</span> <span class="token-function">main</span>() {
-        gl_FragColor = vec4(0.0, 1.0, 0.6, 1.0);
-      }
-    `;
-    
-    <span class="token-keyword">this</span>.program = <span class="token-keyword">this</span>.<span class="token-function">createProgram</span>(vsSource, fsSource);
-  }
-
-  <span class="token-function">render</span>(vertices) {
-    <span class="token-keyword">this</span>.gl.<span class="token-function">clearColor</span>(0.0, 0.0, 0.0, 1.0);
-    <span class="token-keyword">this</span>.gl.<span class="token-function">clear</span>(gl.COLOR_BUFFER_BIT);
-    <span class="token-keyword">this</span>.gl.<span class="token-function">useProgram</span>(<span class="token-keyword">this</span>.program);
-    <span class="token-keyword">this</span>.gl.<span class="token-function">bufferData</span>(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    <span class="token-keyword">this</span>.gl.<span class="token-function">drawArrays</span>(gl.TRIANGLES, 0, 3);
-  }
-}</pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 第三章 -->
-        <section id="chapter-3" class="py-24 px-4">
-            <div class="max-w-6xl mx-auto">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    <!-- 文字描述 -->
-                    <div class="lg:col-span-5">
-                        <div class="glass-card rounded-lg p-8 h-full">
-                            <div class="flex items-center gap-3 mb-6">
-                                <span class="text-neon-purple font-mono text-xs border border-neon-purple/30 px-2 py-1 rounded">CHAPTER 03</span>
-                                <span class="text-gray-500 font-mono text-xs">性能优化</span>
-                            </div>
-                            <h3 class="text-2xl font-bold mb-4">异步编程与优化策略</h3>
-                            <p class="text-gray-400 leading-relaxed mb-4">
-                                异步编程是现代Web开发的核心技能。本章深入探讨 Promise、async/await 的高级用法，以及如何避免常见的性能陷阱。
-                            </p>
-                            <p class="text-gray-400 leading-relaxed mb-4">
-                                重点包括：并发控制、错误处理、资源清理、以及虚拟滚动等性能优化技术。通过实际案例展示如何构建响应迅速的用户界面。
-                            </p>
-                            <p class="text-gray-400 leading-relaxed">
-                                代码示例展示了一个高性能的异步任务调度器实现。
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- 代码展示 -->
-                    <div class="lg:col-span-7">
-                        <div class="glass-card rounded-lg overflow-hidden">
-                            <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/10">
-                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                                <span class="ml-4 text-xs text-gray-500 font-mono">async-optimizer.js</span>
-                            </div>
-                            <div class="p-6">
-                                <div class="code-block" data-lang="javascript">
-<pre><span class="token-comment">// 异步任务调度器</span>
-<span class="token-keyword">class</span> <span class="token-function">TaskScheduler</span> {
-  <span class="token-function">constructor</span>(concurrency = 3) {
-    <span class="token-keyword">this</span>.concurrency = concurrency;
-    <span class="token-keyword">this</span>.queue = [];
-    <span class="token-keyword">this</span>.running = 0;
-  }
-
-  <span class="token-function">async</span> <span class="token-function">schedule</span>(task) {
-    <span class="token-keyword">return new</span> <span class="token-function">Promise</span>((resolve, reject) => {
-      <span class="token-keyword">this</span>.queue.<span class="token-function">push</span>({ task, resolve, reject });
-      <span class="token-keyword">this</span>.<span class="token-function">process</span>();
-    });
-  }
-
-  <span class="token-keyword">async</span> <span class="token-function">process</span>() {
-    <span class="token-keyword">while</span> (<span class="token-keyword">this</span>.running < 3 && <span class="token-keyword">this</span>.queue.length > 0) {
-      <span class="token-keyword">const</span> { task, resolve, reject } = <span class="token-keyword">this</span>.queue.<span class="token-function">shift</span>();
-      <span class="token-keyword">this</span>.running++;
+  <!-- 侧边栏导航 -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Linux.BOOK</div>
+    <div class="sidebar-subtitle">Code is Law</div>
+    <ul class="sidebar-nav">
+      <div class="nav-section-title">首页</div>
+      <li><a href="#hero" onclick="setActive(this)">00 主视觉</a></li>
       
-      <span class="token-keyword">try</span> {
-        <span class="token-keyword">const</span> result = <span class="token-keyword">await</span> task();
-        resolve(result);
-      } <span class="token-keyword">catch</span> (error) {
-        reject(error);
-      } <span class="token-keyword">finally</span> {
-        <span class="token-keyword">this</span>.running--;
+      <div class="nav-section-title">基础篇</div>
+      <li><a href="#ch1" onclick="setActive(this)">01 内核与系统概览</a></li>
+      <li><a href="#ch2" onclick="setActive(this)">02 标准流与快捷键</a></li>
+      <li><a href="#ch3" onclick="setActive(this)">03 常用基础命令</a></li>
+      <li><a href="#ch4" onclick="setActive(this)">04 通配符与匹配</a></li>
+      
+      <div class="nav-section-title">用户与权限</div>
+      <li><a href="#ch5" onclick="setActive(this)">05 用户与用户组管理</a></li>
+      <li><a href="#ch6" onclick="setActive(this)">06 文件权限详解</a></li>
+      <li><a href="#ch7" onclick="setActive(this)">07 目录与文件操作</a></li>
+      
+      <div class="nav-section-title">进阶篇</div>
+      <li><a href="#ch8" onclick="setActive(this)">08 环境变量</a></li>
+      <li><a href="#ch9" onclick="setActive(this)">09 文件搜索</a></li>
+      <li><a href="#ch10" onclick="setActive(this)">10 命令执行与管道</a></li>
+      <li><a href="#ch11" onclick="setActive(this)">11 文本处理</a></li>
+      <li><a href="#ch12" onclick="setActive(this)">12 数据流重定向</a></li>
+      
+      <div class="nav-section-title">系统篇</div>
+      <li><a href="#ch13" onclick="setActive(this)">13 进程管理</a></li>
+      <li><a href="#ch14" onclick="setActive(this)">14 Shell脚本</a></li>
+    </ul>
+  </aside>
+
+  <!-- 主视觉区域 -->
+  <section id="hero" class="hero-section">
+    <div class="hero-grid"></div>
+    <div class="hero-glow glow-1"></div>
+    <div class="hero-glow glow-2"></div>
+    <div class="scanline"></div>
+    <div class="scan-beam"></div>
+    
+    <div class="hero-content">
+      <h1 class="holo-text" data-text="THE BASICS OF LINUX">
+        THE BASICS OF LINUX
+        <div class="holo-glitch" data-text="THE BASICS OF LINUX"></div>
+      </h1>
+      
+      <p class="hero-subtitle">一本关于Linux的基础知识的数字图书</p>
+      <div class="hero-realtime-badge">Rendered in Real-time</div>
+      
+      <a href="#ch1" class="hero-cta">START READING</a>
+    </div>
+  </section>
+
+  <!-- 主内容区 -->
+  <main class="main-content">
+
+    <div id="ch1" class="chapter-header">
+      <div class="chapter-num">CHAPTER 01</div>
+      <h1 class="chapter-title">内核与系统概览</h1>
+      <p class="chapter-desc">Linux 操作系统<span class="highlight-critical">内核</span>直接控制内存和其他硬件。Linux 命令<span class="highlight-important">大小写敏感</span>，这是初学者最容易忽略的规则。</p>
+    </div>
+
+    <div id="ch2" class="chapter-header">
+      <div class="chapter-num">CHAPTER 02</div>
+      <h1 class="chapter-title">标准流与快捷键</h1>
+      <p class="chapter-desc">执行一个 Shell 命令行时，通常自动打开三个标准文件。</p>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">三个标准文件</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">stdin</span> 标准输入文件 —— 进程从标准输入文件中得到输入数据</li>
+        <li><span class="highlight-keyword">stdout</span> 标准输出文件 —— 将正常输出数据输出到标准输出文件</li>
+        <li><span class="highlight-keyword">stderr</span> 标准错误输出文件 —— 将错误信息送到标准错误文件中</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">命令行重要快捷键</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-important">Tab</span> 命令补全</li>
+        <li><span class="highlight-important">Ctrl+a</span> 光标移动到命令行首</li>
+        <li><span class="highlight-important">Ctrl+c</span> 强行终止当前程序</li>
+        <li><span class="highlight-important">Ctrl+d</span> 输入结束或退出终端</li>
+        <li><span class="highlight-important">Ctrl+e</span> 光标移动到命令行尾</li>
+        <li><span class="highlight-important">Ctrl+l</span> 清屏</li>
+        <li><span class="highlight-important">Ctrl+s</span> 暂停，任意键恢复运行</li>
+        <li><span class="highlight-important">Ctrl+z</span> 挂起当前进程至后台，<span class="highlight-keyword">fg</span> 命令恢复前台</li>
+        <li><span class="highlight-important">Alt+Backspace</span> 向前删除一个单词</li>
+        <li><span class="highlight-important">Ctrl+Shift+c</span> 复制</li>
+        <li><span class="highlight-important">Ctrl+Shift+v</span> 粘贴</li>
+      </ul>
+    </div>
+
+    <div id="ch3" class="chapter-header">
+      <div class="chapter-num">CHAPTER 03</div>
+      <h1 class="chapter-title">常用基础命令</h1>
+    </div>
+
+    <div class="code-module">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <div class="code-filename">basic-commands.sh</div>
+      </div>
+      <pre class="code-content"><span class="code-command">uname</span> <span class="code-param">-a</span>               <span class="code-comment"># 查看本机内核</span>
+<span class="code-command">ls</span>                      <span class="code-comment"># 显示目标列表</span>
+<span class="code-command">tree</span>                    <span class="code-comment"># 显示树结构</span>
+<span class="code-command">cd</span> <span class="code-param">[path]</span>             <span class="code-comment"># 切换目录</span>
+<span class="code-command">pwd</span>                     <span class="code-comment"># 绝对路径显示当前目录</span>
+<span class="code-command">man</span> <span class="code-param">[command]</span>         <span class="code-comment"># 查看指令、配置文件、编程帮助等信息</span>
+<span class="code-command">apropos</span> <span class="code-param">[whatever]</span>    <span class="code-comment"># 在简短描述系统命令的数据库文件中查找关键字</span>
+<span class="code-command">echo</span> <span class="code-param">[string]</span>         <span class="code-comment"># 打印一行文本</span>
+<span class="code-command">echo</span> <span class="code-param">-e</span> <span class="code-param">[string]</span>      <span class="code-comment"># 打印一行含转义字符的文本</span>
+<span class="code-command">whatis</span>                  <span class="code-comment"># 显示在线命令说明</span>
+<span class="code-command">cat</span> <span class="code-param">[file]</span>            <span class="code-comment"># 链接文件并打印至标准输出设备</span>
+<span class="code-command">mv</span>                      <span class="code-comment"># 重命名或移动文件</span>
+<span class="code-command">cp</span>                      <span class="code-comment"># 复制</span>
+<span class="code-command">rm</span>                      <span class="code-comment"># 删除</span>
+<span class="code-command">ps</span>                      <span class="code-comment"># 显示系统进程状态</span>
+<span class="code-command">top</span>                     <span class="code-comment"># 实时查看系统整体运行情况</span>
+<span class="code-command">kill</span>                    <span class="code-comment"># 杀死进程</span>
+<span class="code-command">ifconfig</span>                <span class="code-comment"># 查看或设置网络设备</span>
+<span class="code-command">ping</span>                    <span class="code-comment"># 测试网络连通性</span>
+<span class="code-command">netstat</span>                 <span class="code-comment"># 显示网络连接、路由表、网络接口信息</span>
+<span class="code-command">nc</span> <span class="code-param">(netcat)</span>           <span class="code-comment"># 通过建立TCP或UDP连接监听网络</span>
+<span class="code-command">su</span>                      <span class="code-comment"># 切换用户</span>
+<span class="code-command">touch</span>                   <span class="code-comment"># 创建文件</span>
+<span class="code-command">mkdir</span>                   <span class="code-comment"># 创建目录</span>
+<span class="code-command">chmod</span>                   <span class="code-comment"># 变更权限</span>
+<span class="code-command">chown</span>                   <span class="code-comment"># 变更所有者</span>
+<span class="code-command">chgrp</span>                   <span class="code-comment"># 变更所属组</span>
+<span class="code-command">whoami</span>                  <span class="code-comment"># 查看当前登录用户</span>
+<span class="code-command">type</span> <span class="code-param">[command]</span>        <span class="code-comment"># 查看命令类型</span></pre>
+    </div>
+
+    <div id="ch4" class="chapter-header">
+      <div class="chapter-num">CHAPTER 04</div>
+      <h1 class="chapter-title">通配符与匹配</h1>
+    </div>
+
+    <div class="content-block">
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">*</span> 匹配任意个字符</li>
+        <li><span class="highlight-keyword">?</span> 匹配任意一个字符</li>
+        <li><span class="highlight-keyword">[list]</span> 匹配其中的任意单一字符</li>
+        <li><span class="highlight-keyword">[^list]</span> 匹配其中所有字符以外的任意单一字符</li>
+        <li><span class="highlight-keyword">[c1-c2]</span> 匹配范围内的任意单一字符，如 <span class="highlight-keyword">[0-9]</span> <span class="highlight-keyword">[a-z]</span></li>
+        <li><span class="highlight-keyword">{string1,string2,...}</span> 匹配其中任意一个字符串</li>
+        <li><span class="highlight-keyword">{c1..c2}</span> 匹配范围内全部字符，如 <span class="highlight-keyword">{1..10}</span></li>
+      </ul>
+    </div>
+
+    <div id="ch5" class="chapter-header">
+      <div class="chapter-num">CHAPTER 05</div>
+      <h1 class="chapter-title">用户与用户组管理</h1>
+      <p class="chapter-desc">一般登录系统时以普通账户登录。创建用户需要<span class="highlight-important">root权限</span>，两大前提：当前登录用户密码、当前用户属于sudo用户组。</p>
+    </div>
+
+    <div class="content-block">
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">useradd</span> 只创建用户，不会创建用户密码和工作目录，需要使用 <span class="highlight-keyword">passwd &lt;username&gt;</span> 设置新用户密码</li>
+        <li><span class="highlight-keyword">sudo adduser [username]</span> 可以添加用户到系统，同时默认为新用户在/home目录下创建一个工作目录</li>
+        <li><span class="highlight-keyword">su [user]</span> 仅切换用户</li>
+        <li><span class="highlight-keyword">su - [user]</span> 切换用户同时用户的环境变量和工作目录也会跟着改变成目标用户所对应的</li>
+        <li><span class="highlight-keyword">sudo passwd [user]</span> 设置用户密码</li>
+        <li><span class="highlight-keyword">groups [user]</span> 查看用户所属用户组</li>
+        <li><span class="highlight-keyword">sudo usermod -G sudo [user]</span> 为用户添加所属用户组</li>
+        <li><span class="highlight-keyword">sudo deluser [user]</span> 删除用户</li>
+        <li><span class="highlight-keyword">sudo deluser [user] --remove-home</span> 删除用户同时删除工作目录</li>
+        <li><span class="highlight-keyword">sudo groupdel [group]</span> 删除用户组</li>
+      </ul>
+    </div>
+
+    <div id="ch6" class="chapter-header">
+      <div class="chapter-num">CHAPTER 06</div>
+      <h1 class="chapter-title">文件权限详解</h1>
+      <p class="chapter-desc">Linux 里面<span class="highlight-critical">一切皆文件</span>。使用 <span class="highlight-keyword">ls -l [file]</span> 查看文件权限。</p>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">文件类型标识</h2>
+      <p>第一个字母代表文件类型：</p>
+      <ul class="feature-list">
+        <li><span class="highlight-important">d</span> 目录</li>
+        <li><span class="highlight-important">l</span> 软链接</li>
+        <li><span class="highlight-important">b</span> 块设备</li>
+        <li><span class="highlight-important">c</span> 字符设备</li>
+        <li><span class="highlight-important">s</span> 网络嵌套字</li>
+        <li><span class="highlight-important">p</span> 管道</li>
+        <li><span class="highlight-important">-</span> 普通文件</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">权限字符串</h2>
+      <p>第二个字母开始，权限字符串三个一组，依次为<span class="highlight-critical">所有者权限</span>、<span class="highlight-critical">组权限</span>、<span class="highlight-critical">其他人权限</span>，顺序均为 rwx。有相应权限表示成相应字母，不具有相应权限用 <span class="highlight-keyword">-</span> 表示。</p>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">r</span> 读取权限，数字代号 <span class="highlight-important">4</span></li>
+        <li><span class="highlight-keyword">w</span> 写入权限，数字代号 <span class="highlight-important">2</span></li>
+        <li><span class="highlight-keyword">x</span> 执行或切换权限，数字代号 <span class="highlight-important">1</span></li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">权限变更命令</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">sudo chown [user] [file]</span> 变更文件所有者</li>
+        <li><span class="highlight-keyword">sudo chmod [r][w][x] [file]</span> 二进制数字表示法修改权限</li>
+        <li><span class="highlight-keyword">sudo chmod [权限范围][+·-·=][权限设置] [file]</span> 加减赋值法修改权限</li>
+      </ul>
+      <p>权限范围：<span class="highlight-important">u</span> 所有者、<span class="highlight-important">g</span> 所属组、<span class="highlight-important">o</span> 其他人、<span class="highlight-important">a</span> 所有人</p>
+      <p><span class="highlight-keyword">-R</span> 参数：递归处理，指令目录下的所有文件及子目录一并处理</p>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">&lt;权限范围&gt;+&lt;权限设置&gt;</span> 开启权限范围的文件或目录的该选项权限设置</li>
+        <li><span class="highlight-keyword">&lt;权限范围&gt;-&lt;权限设置&gt;</span> 关闭权限范围的文件或目录的该选项权限设置</li>
+        <li><span class="highlight-keyword">&lt;权限范围&gt;=&lt;权限设置&gt;</span> 指定权限范围的文件或目录的该选项权限设置</li>
+      </ul>
+    </div>
+
+    <div id="ch7" class="chapter-header">
+      <div class="chapter-num">CHAPTER 07</div>
+      <h1 class="chapter-title">目录与文件基本操作</h1>
+    </div>
+
+    <div class="content-block">
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">touch [file]</span> 新建空白文件；更改已有文件的时间戳。不加任何参数只指定一个文件名创建空白文件，不会覆盖已有同名文件，也可以同时指定时间戳</li>
+        <li><span class="highlight-keyword">mkdir [dir]</span> 新建空目录</li>
+        <li><span class="highlight-keyword">mkdir -p [dir]</span> 创建多级目录</li>
+        <li><span class="highlight-keyword">cp [file] [dir]</span> 复制文件</li>
+        <li><span class="highlight-keyword">cp -r [dir] [dir]</span> 复制目录</li>
+        <li><span class="highlight-keyword">rm [file]</span> 删除文件</li>
+        <li><span class="highlight-keyword">rm -f [file]</span> 强制删除文件</li>
+        <li><span class="highlight-keyword">rm -r [dir]</span> 删除目录</li>
+        <li><span class="highlight-keyword">rm -rf [dir]</span> 强制删除目录</li>
+        <li><span class="highlight-keyword">mv [file] [dir]</span> 移动文件</li>
+        <li><span class="highlight-keyword">mv [oldfn] [newfn]</span> 重命名文件</li>
+        <li><span class="highlight-keyword">cat [file]</span> 正序打印文件</li>
+        <li><span class="highlight-keyword">cat -n [file]</span> 显示行号</li>
+        <li><span class="highlight-keyword">tac [file]</span> 倒序打印文件</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">nl：更专业的行号打印命令</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">-b</span> 指定添加行号的方式：<span class="highlight-keyword">-b a</span> 无论是否空行，<span class="highlight-keyword">-b t</span> 只列出非空行编号</li>
+        <li><span class="highlight-keyword">-n</span> 设置行号的样式：<span class="highlight-keyword">-n ln</span> 最左端显示，<span class="highlight-keyword">-n rn</span> 最右边显示且不加0，<span class="highlight-keyword">-n rz</span> 最右边显示且加0</li>
+        <li><span class="highlight-keyword">-w</span> 行号占用的位数，默认6位</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">分页与查看</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">more [file]</span> 分页查看文件，只能向一个方向滚动</li>
+        <li><span class="highlight-keyword">less [file]</span> 分页查看文件，基于more和vi，功能更强</li>
+        <li><span class="highlight-keyword">head [file]</span> 只查看文件头10行</li>
+        <li><span class="highlight-keyword">tail [file]</span> 只查看文件尾10行</li>
+        <li><span class="highlight-keyword">tail -n [num] [file]</span> 只查看文件尾几行</li>
+        <li><span class="highlight-keyword">tail -f [file]</span> 不停地读取某个文件的内容并显示，动态查看日志，实时监视</li>
+        <li><span class="highlight-keyword">file [file]</span> 查看文件类型</li>
+      </ul>
+    </div>
+
+    <div id="ch8" class="chapter-header">
+      <div class="chapter-num">CHAPTER 08</div>
+      <h1 class="chapter-title">环境变量</h1>
+      <p class="chapter-desc">在当前进程的子进程有效则为环境变量。按变量生存周期划分，Linux变量分为两类：修改配置文件变量永久生效；使用export声明，变量在关闭shell时失效。</p>
+    </div>
+
+    <div class="content-block">
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">declare [var]</span> 预声明变量，创建指定类型变量如数组时会用到</li>
+        <li><span class="highlight-keyword">var=[value]</span> 变量赋值</li>
+        <li><span class="highlight-keyword">echo $[var]</span> 读取变量</li>
+        <li><span class="highlight-keyword">set</span> 显示当前Shell所有变量，包括内建环境变量、用户自定义变量</li>
+        <li><span class="highlight-keyword">env</span> 显示与当前用户相关的环境变量，让命令在指定环境中运行</li>
+        <li><span class="highlight-keyword">export</span> 显示从Shell中导出成环境变量的变量，将自定义变量导出为环境变量</li>
+        <li><span class="highlight-keyword">export PATH=$PATH:[absolute path]</span> 临时添加自定义路径到环境变量</li>
+        <li><span class="highlight-keyword">unset [var]</span> 删除变量</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">配置文件</h2>
+      <p>用户home目录中包含Shell启动默认执行的配置脚本，以初始化环境。zsh配置文件 <span class="highlight-keyword">.zshrc</span>，Bash配置文件 <span class="highlight-keyword">.bashrc</span></p>
+    </div>
+
+    <div class="code-module">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <div class="code-filename">env-config.sh</div>
+      </div>
+      <pre class="code-content"><span class="code-comment"># 永久添加自定义路径到环境变量</span>
+<span class="code-command">echo</span> <span class="code-string">"PATH=$PATH:[absolute path]"</span> >> <span class="code-variable">.zshrc</span>
+<span class="code-command">source</span> <span class="code-variable">.zshrc</span>      <span class="code-comment"># 立即生效</span>
+
+<span class="code-comment"># 重定向符号说明</span>
+<span class="code-comment"># >> 将标准输出以追加的方式重定向到一个文件中</span>
+<span class="code-comment"># >  将标准输出以覆盖的方式重定向到一个文件中</span>
+<span class="code-comment"># 指定文件不存在则创建新的文件</span></pre>
+    </div>
+
+    <div id="ch9" class="chapter-header">
+      <div class="chapter-num">CHAPTER 09</div>
+      <h1 class="chapter-title">文件搜索</h1>
+    </div>
+
+    <div class="content-block">
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">whereis</span> 只能搜索二进制文件(<span class="highlight-keyword">-b</span>)、man帮助文件(<span class="highlight-keyword">-m</span>)、源代码文件(<span class="highlight-keyword">-s</span>)</li>
+        <li><span class="highlight-keyword">which</span> 确定是否安装指定程序，从PATH环境变量指定路径搜索命令返回第一个结果</li>
+        <li><span class="highlight-keyword">find [path] [option] [action]</span> 通过文件类型文件名进行查找，根据文件的属性如时间戳权限等进行搜索</li>
+      </ul>
+    </div>
+
+    <div class="code-module">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <div class="code-filename">search-examples.sh</div>
+      </div>
+      <pre class="code-content"><span class="code-command">sudo</span> <span class="code-command">find</span> <span class="code-param">/etc</span> <span class="code-param">-name</span> <span class="code-variable">interfaces</span>   <span class="code-comment"># 从/etc目录中查找interfaces文件</span>
+<span class="code-command">find</span> <span class="code-param">~</span> <span class="code-param">-mtime</span> <span class="code-variable">0</span>                    <span class="code-comment"># 查找home目录中24小时内改动文件</span>
+<span class="code-command">find</span> <span class="code-param">~</span> <span class="code-param">-newer</span> <span class="code-variable">/etc</span>                 <span class="code-comment"># 查找home目录中比/etc目录新的文件</span></pre>
+    </div>
+
+    <div id="ch10" class="chapter-header">
+      <div class="chapter-num">CHAPTER 10</div>
+      <h1 class="chapter-title">命令执行与管道</h1>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">命令执行顺序控制</h2>
+      <ul class="feature-list">
+        <li>简单的顺序执行：<span class="highlight-keyword">;</span> 间隔命令</li>
+        <li>有选择的执行：<span class="highlight-keyword">which [command] &amp;&amp; [lo] [comand] ...</span> 通过逻辑与 <span class="highlight-important">&amp;&amp;</span> 和逻辑或 <span class="highlight-important">||</span> 组合选择性执行</li>
+        <li><span class="highlight-keyword">echo $?</span> 获取上次命令返回结果</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">管道 (|)</h2>
+      <p>一种通信机制，用于进程间的通信，也可通过socket进行网络通信。将前一个进程的输出(stdout)作为下一个进程的输入(stdin)。</p>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">grep [option] [regular expression] [file]</span> 结合正则表达式实现复杂却高效的匹配查找</li>
+        <li><span class="highlight-keyword">wc [option] [file]</span> 统计并输出文件中行(<span class="highlight-keyword">-l</span>)、单词(<span class="highlight-keyword">-w</span>)、字节(<span class="highlight-keyword">-c</span>)、字符(<span class="highlight-keyword">-m</span>)的数目</li>
+        <li><span class="highlight-keyword">cat [file] | sort</span> 默认字典排序</li>
+        <li><span class="highlight-keyword">cat [file] | sort -r</span> 反转排序</li>
+        <li><span class="highlight-keyword">cat [file] | sort -t '[sign]' -k [num]</span> 分隔符分割后按特定字段排序</li>
+        <li><span class="highlight-keyword">history | sort | uniq</span> 去重输出</li>
+        <li><span class="highlight-keyword">history | sort | uniq -dc</span> 输出重复行和重复次数</li>
+      </ul>
+    </div>
+
+    <div id="ch11" class="chapter-header">
+      <div class="chapter-num">CHAPTER 11</div>
+      <h1 class="chapter-title">文本处理</h1>
+    </div>
+
+    <div class="content-block">
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">tr</span> 删除文本信息中的某些文字</li>
+        <li><span class="highlight-keyword">echo 'hello shiyanlou' | tr -d 'olh'</span> 删除所有的olh</li>
+        <li><span class="highlight-keyword">echo 'hello' | tr -s 'l'</span> 连续并重复的字符ll去重为一个l</li>
+        <li><span class="highlight-keyword">echo 'input some text here' | tr '[:lower:]' '[:upper:]'</span> 转换为大写或小写输出</li>
+        <li><span class="highlight-keyword">cat [file] | col -x</span> 将Tab转换为空格</li>
+        <li><span class="highlight-keyword">cat [file] | col -h</span> 将空格转换为Tab（默认）</li>
+        <li><span class="highlight-keyword">join -t '[sign]' [file] [file]</span> 默认将两个文件以指定分隔后第一字段相同的那一行以指定分隔符合并在一起</li>
+        <li><span class="highlight-keyword">join -t '[sign]' -1 2 [file] -2 3 [file]</span> 分别比对第2和第3个字段</li>
+        <li><span class="highlight-keyword">paste</span> 不对比数据简单地将多个文件合并一起，以Tab隔开</li>
+        <li><span class="highlight-keyword">paste -d '[sign]' [file]...</span> 指定合并分隔符</li>
+        <li><span class="highlight-keyword">paste -s [file]...</span> 合并到下一文件时分行</li>
+      </ul>
+    </div>
+
+    <div id="ch12" class="chapter-header">
+      <div class="chapter-num">CHAPTER 12</div>
+      <h1 class="chapter-title">数据流重定向</h1>
+    </div>
+
+    <div class="content-block">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>描述符</th>
+              <th>设备文件</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="highlight-important">0</span></td>
+              <td>/dev/stdin</td>
+              <td>标准输入</td>
+            </tr>
+            <tr>
+              <td><span class="highlight-important">1</span></td>
+              <td>/dev/stdout</td>
+              <td>标准输出</td>
+            </tr>
+            <tr>
+              <td><span class="highlight-important">2</span></td>
+              <td>/dev/stderr</td>
+              <td>标准错误</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="content-block">
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">cat [file] 1&gt;[file] 2&gt;&amp;1</span> 将标准错误重定向到标准输出，再将标准输出重定向到文件</li>
+        <li><span class="highlight-keyword">cat [file] &amp;&gt;[file]</span> 将标准错误和标准输出同时重定向到文件</li>
+        <li><span class="highlight-keyword">exec [num]&gt;[file]</span> 永久重定向直至退出当前shell</li>
+        <li><span class="highlight-critical">cat [file] 1&gt;/dev/null 2&gt;&amp;1</span> 完全屏蔽命令的输出</li>
+      </ul>
+      <p>空设备 <span class="highlight-keyword">/dev/null</span> 用于丢弃不需要的输出流，读取立即得到EOF。</p>
+    </div>
+
+    <div id="ch13" class="chapter-header">
+      <div class="chapter-num">CHAPTER 13</div>
+      <h1 class="chapter-title">进程管理</h1>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">基本概念</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-important">程序(procedure)</span>：执行一系列有逻辑有顺序结构的指令</li>
+        <li><span class="highlight-important">进程(process)</span>：程序在一个数据集合上的一次执行过程</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">进程的特征</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">动态性</span>：进程的实质是一次程序执行的过程，有创建撤销等状态的变化，而程序是一个静态的实体</li>
+        <li><span class="highlight-keyword">并发性</span>：进程可以做到在一个时间段内有多个程序在运行中，程序只是静态的实体不存在并发性</li>
+        <li><span class="highlight-keyword">独立性</span>：进程可以独立分配资源，独立接受调度，独立地运行</li>
+        <li><span class="highlight-keyword">异步性</span>：进程以不可预知的速度向前推进</li>
+        <li><span class="highlight-keyword">结构性</span>：进程拥有代码段、数据段、PCB(进程控制块，进程存在的唯一标志)</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">并发 vs 并行</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-important">并发</span>：在一个时间段内，宏观有多个程序都在有条不紊的执行，每一瞬间只有一个在执行，只是在一段时间有多个程序都执行过</li>
+        <li><span class="highlight-important">并行</span>：在每一个瞬间都有多个程序都在同时执行，必须多CPU(核)</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">线程与进程分类</h2>
+      <p><span class="highlight-important">线程</span>：操作系统进行运算调度的最小单位，包含在进程之中是进程中的实际运作单位。一条线程指的是进程中一个单一顺序的控制流，一个进程中可以并发多个线程并且每条线程并行执行不同的任务。因为线程中几乎不包含系统资源所以执行更快更有效率。</p>
+      <ul class="feature-list">
+        <li>以进程的功能与服务的对象来分：用户进程、系统进程</li>
+        <li>以应用程序的服务类型来分：交互进程、批处理进程、守护进程</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">系统调用与特殊进程</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">fork()</span>：为当前的进程创建一个新的进程，新的进程则是其子进程，子进程除了父进程的返回值和PID以外与父进程相同</li>
+        <li><span class="highlight-keyword">exec()</span>：切换子进程中的执行程序，替换其从父进程复制过来的代码段与数据段</li>
+        <li><span class="highlight-critical">僵尸进程</span>：放弃了几乎所有内存空间，没有任何可执行代码，不能被调度，仅在进程列表中保留一个位置，记载该进程的退出状态等信息供其父进程收集从而释放它。但Linux能使用的PID有限，如果系统中存在大量僵尸进程会因为没有可用的PID从而导致不能产生新的进程</li>
+        <li><span class="highlight-important">孤儿进程</span>：父进程非正常的结束未能及时收回的仍在运行的子进程。孤儿进程一般会成为init的子进程，由init来做善后处理</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2 class="block-title">进程控制</h2>
+      <ul class="feature-list">
+        <li><span class="highlight-keyword">ls &amp;</span> 通过&amp;让命令在后台中运行</li>
+        <li><span class="highlight-keyword">jobs</span> 查看被停止并放置在后台的工作</li>
+        <li><span class="highlight-note">ubuntu在zsh中需要%，在bash中不需要</span></li>
+        <li><span class="highlight-keyword">fg %[jnum]</span> 将后台的工作拿到前台</li>
+        <li><span class="highlight-keyword">Ctrl+z</span> 使工作停止放置在后台</li>
+        <li><span class="highlight-keyword">bg %[jnum]</span> 让其在后台运作</li>
+        <li><span class="highlight-keyword">ps aux</span> 罗列出所有的进程信息</li>
+        <li><span class="highlight-keyword">ps -l</span> 显示bash相关的进程信息</li>
+        <li><span class="highlight-keyword">kill -9 [pid]</span> 强制杀死进程</li>
+      </ul>
+    </div>
+
+    <div id="ch14" class="chapter-header">
+      <div class="chapter-num">CHAPTER 14</div>
+      <h1 class="chapter-title">Shell脚本</h1>
+    </div>
+
+    <div class="code-module">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <div class="code-filename">hello-shell.sh</div>
+      </div>
+      <pre class="code-content"><span class="code-keyword">#!/bin/bash</span>
+<span class="code-keyword">for</span> ((i = 0; i < 5; i++)); <span class="code-keyword">do</span>
+  <span class="code-command">echo</span> <span class="code-string">"hello shell"</span>
+<span class="code-keyword">done</span>
+<span class="code-keyword">exit</span> 0</pre>
+    </div>
+
+    <div style="margin-top: 2rem; padding: 1.5rem; border: 1px dashed var(--accent-purple); border-radius: 8px; text-align: center;">
+      <span class="highlight-note" style="font-size: 1.1rem;">未完待续</span>
+    </div>
+
+    <div class="footer">
+      <p>© 2026 Linux.BOOK - Code is Law. Read for Open.</p>
+    </div>
+  </main>
+
+  <script>
+    // 侧边栏导航高亮
+    function setActive(el) {
+      document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // 滚动监听 - 自动高亮侧边栏
+    const sections = document.querySelectorAll('[id^="ch"], #hero');
+    const navLinks = document.querySelectorAll('.sidebar-nav a');
+    
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if (window.scrollY >= sectionTop - 200) {
+          current = section.getAttribute('id');
+        }
+      });
+      
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    });
+
+    // ============================================
+    // 增强版背景特效 - 深度数字雨 + 粒子网格 + 拖尾
+    // ============================================
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const chars = 'LINUX01内核架构系统权限进程管道Shell$#!>';
+    
+    class RainColumn {
+      constructor(x, speed, fontSize, opacity) {
+        this.x = x;
+        this.speed = speed;
+        this.fontSize = fontSize;
+        this.opacity = opacity;
+        this.y = Math.random() * canvas.height;
+        this.chars = [];
+        for(let i=0; i<20; i++) this.chars.push(chars[Math.floor(Math.random() * chars.length)]);
+      }
+      
+      draw() {
+        ctx.font = this.fontSize + 'px monospace';
+        for(let i = 0; i < this.chars.length; i++) {
+          const charY = this.y - (i * this.fontSize);
+          if(i === 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.9})`;
+            ctx.shadowBlur = 15; ctx.shadowColor = 'rgba(34, 211, 238, 0.8)';
+          } else if(i < 3) {
+            ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity * (1 - i/5)})`;
+            ctx.shadowBlur = 0;
+          } else {
+            ctx.fillStyle = `rgba(34, 211, 238, ${this.opacity * 0.3 * (1 - i/20)})`;
+            ctx.shadowBlur = 0;
+          }
+          if(charY > 0 && charY < canvas.height) ctx.fillText(this.chars[i], this.x, charY);
+        }
+        if(Math.random() > 0.95) this.chars[Math.floor(Math.random() * this.chars.length)] = chars[Math.floor(Math.random() * chars.length)];
+        this.y += this.speed;
+        if(this.y - (this.chars.length * this.fontSize) > canvas.height) this.y = -this.fontSize;
       }
     }
-  }
-}
 
-<span class="token-comment">// 使用示例</span>
-<span class="token-keyword">const</span> scheduler = <span class="token-keyword">new</span> <span class="token-function">TaskScheduler</span>(3);
-<span class="token-keyword">const</span> results = <span class="token-keyword">await</span> <span class="token-function">Promise</span>.<span class="token-function">all</span>(
-  tasks.<span class="token-function">map</span>(task => scheduler.<span class="token-function">schedule</span>(task))
-);</pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    const rainColumns = [];
+    for(let i = 0; i < Math.floor(canvas.width / 25); i++) rainColumns.push(new RainColumn(i * 25, 1.5, 10, 0.2));
+    for(let i = 0; i < Math.floor(canvas.width / 35); i++) rainColumns.push(new RainColumn(i * 35 + 10, 3, 14, 0.4));
+    for(let i = 0; i < Math.floor(canvas.width / 60); i++) rainColumns.push(new RainColumn(i * 60 + 20, 6, 18, 0.7));
 
-    </main>
+    const particles = [];
+    const particleCount = 50;
+    const maxDist = 180;
 
-    <!-- Footer -->
-    <footer class="py-12 border-t border-white/10 bg-black/80 backdrop-blur-md relative z-10">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
-            <div class="mb-6 md:mb-0">
-                <h4 class="font-mono text-2xl font-bold text-white">Linux<span class="text-neon-green">.BOOK</span></h4>
-                <p class="text-gray-500 text-sm mt-2">Code is Law. Read for Open.</p>
-            </div>
-        </div>
-        <div class="text-center mt-12 text-xs text-gray-600 font-mono">
-            © 2026. DESIGNED BY AI.
-        </div>
-    </footer>
-
-    <script>
-        // --- 1. Three.js Shader Background Setup ---
-        const canvasContainer = document.getElementById('canvas-container');
-        
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050510, 0.002);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        canvasContainer.appendChild(renderer.domElement);
-
-        // Shader Geometry
-        const geometry = new THREE.PlaneGeometry(20, 20, 64, 64);
-
-        const material = new THREE.ShaderMaterial({
-            uniforms: {
-                uTime: { value: 0 },
-                uColor1: { value: new THREE.Color(0x00ff9d) }, 
-                uColor2: { value: new THREE.Color(0x00d0ff) }, 
-                uMouse: { value: new THREE.Vector2(0, 0) }
-            },
-            vertexShader: `
-                varying vec2 vUv;
-                varying float vElevation;
-                uniform float uTime;
-                uniform vec2 uMouse;
-
-                void main() {
-                    vUv = uv;
-                    
-                    vec3 pos = position;
-                    
-                    float elevation = sin(pos.x * 2.0 + uTime) * 0.2;
-                    elevation += sin(pos.y * 1.5 + uTime * 0.8) * 0.2;
-                    
-                    float dist = distance(uv, uMouse);
-                    elevation += smoothstep(0.5, 0.0, dist) * 0.3 * sin(uTime * 3.0);
-
-                    pos.z += elevation;
-                    vElevation = elevation;
-
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-                }
-            `,
-            fragmentShader: `
-                varying vec2 vUv;
-                varying float vElevation;
-                uniform vec3 uColor1;
-                uniform vec3 uColor2;
-
-                void main() {
-                    float mixStrength = (vElevation + 0.3) * 1.5;
-                    vec3 color = mix(uColor2, uColor1, mixStrength);
-                    
-                    float grid = step(0.98, fract(vUv.x * 20.0)) + step(0.98, fract(vUv.y * 20.0));
-                    color += vec3(grid) * 0.3;
-
-                    float alpha = 1.0 - distance(vUv, vec2(0.5));
-                    
-                    gl_FragColor = vec4(color, alpha * 0.8); 
-                }
-            `,
-            transparent: true,
-            wireframe: true
-        });
-
-        const plane = new THREE.Mesh(geometry, material);
-        scene.add(plane);
-        plane.rotation.x = -Math.PI * 0.25;
-
-        // Particles
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 500;
-        const posArray = new Float32Array(particlesCount * 3);
-        
-        for(let i = 0; i < particlesCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 15;
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.8; this.vy = (Math.random() - 0.5) * 0.8;
+        this.size = Math.random() * 2 + 1; this.trail = []; this.maxTrail = 5;
+      }
+      update() {
+        this.trail.push({x: this.x, y: this.y});
+        if(this.trail.length > this.maxTrail) this.trail.shift();
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+      }
+      draw() {
+        for(let i = 0; i < this.trail.length; i++) {
+          ctx.beginPath();
+          ctx.arc(this.trail[i].x, this.trail[i].y, this.size * 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(167, 139, 250, ${(i / this.trail.length) * 0.2})`;
+          ctx.fill();
         }
-        
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const particlesMaterial = new THREE.PointsMaterial({
-            size: 0.02,
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.5
-        });
-        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(particlesMesh);
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(167, 139, 250, 0.8)';
+        ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(167, 139, 250, 0.5)';
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+    }
 
-        camera.position.z = 5;
+    for (let i = 0; i < particleCount; i++) particles.push(new Particle());
 
-        // --- 2. Interaction Logic ---
-        
-        let mouseX = 0;
-        let mouseY = 0;
+    let mouse = { x: null, y: null };
+    window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
 
-        const windowHalfX = window.innerWidth / 2;
-        const windowHalfY = window.innerHeight / 2;
-
-        document.addEventListener('mousemove', (event) => {
-            mouseX = (event.clientX - windowHalfX) / 100;
-            mouseY = (event.clientY - windowHalfY) / 100;
-            
-            material.uniforms.uMouse.value.x = event.clientX / window.innerWidth;
-            material.uniforms.uMouse.value.y = 1.0 - (event.clientY / window.innerHeight);
-        });
-
-        const clock = new THREE.Clock();
-
-        function animate() {
-            const elapsedTime = clock.getElapsedTime();
-
-            plane.rotation.z += 0.001;
-            particlesMesh.rotation.y = elapsedTime * 0.05;
-
-            material.uniforms.uTime.value = elapsedTime;
-
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
+    function animate() {
+      ctx.fillStyle = 'rgba(10, 14, 23, 0.15)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.shadowBlur = 0;
+      rainColumns.forEach(col => col.draw());
+      particles.forEach(p => { p.update(); p.draw(); });
+      ctx.shadowBlur = 0;
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < maxDist) {
+            ctx.beginPath(); ctx.strokeStyle = `rgba(167, 139, 250, ${0.2 * (1 - dist / maxDist)})`;
+            ctx.lineWidth = 1; ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
+          }
         }
-
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // --- 3. GSAP Animations ---
-        gsap.registerPlugin(ScrollTrigger);
-
-        // Hero Animations
-        gsap.utils.toArray('.animate-up').forEach((elem, i) => {
-            gsap.to(elem, {
-                opacity: 1,
-                y: 0,
-                duration: 1,
-                delay: 0.5 + (i * 0.2),
-                ease: 'power3.out'
-            });
-        });
-
-        // 目录动画
-        gsap.from("#toc", {
-            scrollTrigger: {
-                trigger: "#toc",
-                start: "top 80%",
-            },
-            y: 50,
-            opacity: 0,
-            duration: 1,
-            ease: "power3.out"
-        });
-
-        // 章节动画
-        gsap.utils.toArray('[id^="chapter-"]').forEach((section) => {
-            gsap.from(section.querySelector('.glass-card'), {
-                scrollTrigger: {
-                    trigger: section,
-                    start: "top 70%",
-                },
-                y: 80,
-                opacity: 0,
-                duration: 1,
-                ease: "power3.out"
-            });
-        });
-
-        // --- 4. 目录折叠功能 ---
-        const tocToggle = document.getElementById('toc-toggle');
-        const tocContent = document.getElementById('toc-content');
-
-        tocToggle.addEventListener('click', () => {
-            tocContent.classList.toggle('open');
-            tocToggle.textContent = tocContent.classList.contains('open') 
-                ? '[收起目录]' 
-                : '[展开目录]';
-        });
-
-        // --- 5. 3D Tilt Logic (移除原有卡片的 tilt，保留背景效果) ---
-
-        // --- 6. 代码高亮增强 ---
-        document.querySelectorAll('.code-block pre').forEach(block => {
-            // 已经有语法高亮
-        });
-
-    </script>
+        if(mouse.x && mouse.y) {
+          const dx = particles[i].x - mouse.x, dy = particles[i].y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 250) {
+            ctx.beginPath(); ctx.strokeStyle = `rgba(34, 211, 238, ${0.4 * (1 - dist / 250)})`;
+            ctx.lineWidth = 1.5; ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
 </body>
 </html>
