@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto.BOOK - Secrecy is Power</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #060a10;
+            --bg-secondary: #0b1018;
+            --fg: #e0e6f0;
+            --fg-muted: #5a6a80;
+            --accent: #00ff9d;
+            --accent-dim: rgba(0, 255, 157, 0.08);
+            --accent-glow: rgba(0, 255, 157, 0.5);
+            --card: #0e1520;
+            --border: #162030;
+            --code-bg: #080d14;
+            --danger: #ff2d55;
+            --cyan: #00d4ff;
+            --warning: #ffb800;
+            --sidebar-w: 260px;
+            --navbar-h: 60px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--bg);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        /* ===== 粒子背景 ===== */
+        #particle-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .scanline-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9998;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.04) 0px,
+                rgba(0, 0, 0, 0.04) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            animation: scanline-move 8s linear infinite;
+        }
+
+        @keyframes scanline-move {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100vh; }
+        }
+
+        .crt-flicker {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 9997;
+            animation: crt-flicker 0.15s infinite;
+        }
+
+        @keyframes crt-flicker {
+            0% { opacity: 0.98; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+
+        .cursor-glow {
+            position: fixed;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(0, 255, 157, 0.07) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: screen;
+            transition: width 0.3s, height 0.3s;
+        }
+
+        /* ===== 导航栏 ===== */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: var(--navbar-h);
+            background: rgba(6, 10, 16, 0.7);
+            backdrop-filter: blur(20px) saturate(1.5);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+            transition: all 0.4s ease;
+        }
+
+        .navbar.scrolled {
+            background: rgba(6, 10, 16, 0.95);
+            box-shadow: 0 2px 40px rgba(0, 255, 157, 0.1);
+            border-bottom-color: rgba(0, 255, 157, 0.2);
+        }
+
+        .nav-brand {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent);
+            text-decoration: none;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .nav-brand span { color: var(--fg-muted); font-weight: 400; }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            margin-left: 2rem;
+            gap: 0.2rem;
+        }
+
+        .nav-links > li > a {
+            display: block;
+            padding: 0.5rem 1rem;
+            color: var(--fg-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .nav-links > li > a:hover {
+            color: var(--accent);
+            background: var(--accent-dim);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--fg);
+            font-size: 1.2rem;
+            margin-left: auto;
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .hamburger:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ===== 侧边导航 ===== */
+        .sidebar {
+            position: fixed;
+            top: var(--navbar-h); left: 0;
+            width: var(--sidebar-w);
+            height: calc(100vh - var(--navbar-h));
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            z-index: 999;
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-section { margin-bottom: 1.5rem; }
+
+        .sidebar-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--accent);
+            padding: 0.5rem 1.5rem;
+            margin-bottom: 0.3rem;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 0.4rem 1.5rem 0.4rem 2rem;
+            color: var(--fg-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            border-left: 2px solid transparent;
+            position: relative;
+        }
+
+        .sidebar a:hover {
+            color: var(--fg);
+            background: rgba(0, 255, 157, 0.04);
+            border-left-color: rgba(0, 255, 157, 0.4);
+        }
+
+        .sidebar a.active {
+            color: var(--accent);
+            background: var(--accent-dim);
+            border-left-color: var(--accent);
+            text-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .sidebar a.active::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 50%;
+            transform: translateY(-50%);
+            width: 3px; height: 60%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            border-radius: 3px;
+        }
+
+        /* ===== 主内容区 - 居中布局 ===== */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            margin-top: var(--navbar-h);
+            padding: 4rem;
+            position: relative;
+            z-index: 2;
+            /* 核心：在剩余空间内水平居中 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 内容容器限制最大宽度 */
+        .main-content > .chapter,
+        .main-content > .footer {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* ===== Hero 主视觉 ===== */
+        #hero {
+            min-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            padding: 4rem 2rem;
+            width: 100%;
+        }
+
+        .hero-deco {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--fg-muted);
+            letter-spacing: 6px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fade-in-up 1s 0.3s forwards;
+        }
+
+        .hero-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(2.5rem, 7vw, 5.5rem);
+            font-weight: 900;
+            letter-spacing: 12px;
+            color: var(--fg);
+            position: relative;
+            opacity: 0;
+            animation: hero-enter 1.2s 0.5s forwards, glitch-skew 4s infinite linear alternate-reverse;
+        }
+
+        @keyframes hero-enter {
+            0% { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        .hero-title::before, .hero-title::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        .hero-title::before {
+            color: var(--danger);
+            animation: glitch-effect 3s infinite linear alternate-reverse;
+            clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+            transform: translate(-3px, -2px);
+            opacity: 0.8;
+        }
+
+        .hero-title::after {
+            color: var(--cyan);
+            animation: glitch-effect2 2s infinite linear alternate-reverse;
+            clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+            transform: translate(3px, 2px);
+            opacity: 0.8;
+        }
+
+        @keyframes glitch-effect {
+            0% { transform: translate(0); }
+            20% { transform: translate(-3px, 3px); }
+            40% { transform: translate(-3px, -3px); }
+            60% { transform: translate(3px, 3px); }
+            80% { transform: translate(3px, -3px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes glitch-effect2 {
+            0% { transform: translate(0); }
+            20% { transform: translate(3px, -3px); }
+            40% { transform: translate(3px, 3px); }
+            60% { transform: translate(-3px, -3px); }
+            80% { transform: translate(-3px, 3px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes glitch-skew {
+            0% { transform: skew(0deg); }
+            2% { transform: skew(0.5deg); }
+            4% { transform: skew(0deg); }
+            100% { transform: skew(0deg); }
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--fg-muted);
+            margin-top: 1.5rem;
+            letter-spacing: 3px;
+            opacity: 0;
+            animation: fade-in-up 1s 1s forwards;
+        }
+
+        @keyframes fade-in-up {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-badge {
+            margin-top: 2rem;
+            padding: 0.4rem 1.2rem;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            animation: pulse-border 2s infinite, fade-in-up 1s 1.2s forwards;
+            opacity: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-badge::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,157,0.2), transparent);
+            animation: scan-sweep 3s infinite;
+        }
+
+        @keyframes scan-sweep {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: 0 0 5px var(--accent-glow), inset 0 0 5px rgba(0,255,157,0.05); }
+            50% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0,255,157,0.1), inset 0 0 10px rgba(0,255,157,0.1); }
+        }
+
+        .hero-cta {
+            margin-top: 3rem;
+            display: inline-block;
+            padding: 0.8rem 2.5rem;
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: fade-in-up 1s 1.4s forwards;
+        }
+
+        .hero-cta::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: var(--accent);
+            transition: left 0.4s ease;
+            z-index: -1;
+        }
+
+        .hero-cta:hover { color: var(--bg); text-shadow: none; box-shadow: 0 0 30px var(--accent-glow); }
+        .hero-cta:hover::before { left: 0; }
+
+        /* ===== 章节通用 ===== */
+        .chapter {
+            margin-bottom: 6rem;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .chapter.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .chapter-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chapter-label::before {
+            content: '';
+            width: 40px; height: 1px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
+
+        .chapter-title {
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            font-weight: 900;
+            color: var(--fg);
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .chapter-title::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0;
+            width: 80px; height: 2px;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--fg);
+            margin: 2.5rem 0 1rem;
+            padding-left: 1rem;
+            border-left: 3px solid var(--accent);
+            box-shadow: inset 3px 0 8px rgba(0,255,157,0.1);
+        }
+
+        p { margin-bottom: 1rem; }
+
+        /* ===== 列表 ===== */
+        .content-list { list-style: none; padding: 0; }
+
+        .content-list li {
+            padding: 0.6rem 0 0.6rem 1.8rem;
+            position: relative;
+            color: var(--fg);
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .content-list li:hover { padding-left: 2.2rem; }
+
+        .content-list li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            text-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .content-list li strong, .content-list li b {
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .content-list li .desc { color: var(--fg-muted); }
+
+        /* ===== 代码块 ===== */
+        .code-block {
+            position: relative;
+            margin: 1.5rem 0;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .code-block:hover {
+            border-color: rgba(0, 255, 157, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.05);
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(22, 32, 48, 0.5);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-filename {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--fg-muted);
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent-dim); }
+
+        .code-body { padding: 1.2rem 1.5rem; overflow-x: auto; }
+
+        .code-body pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.9;
+            color: var(--fg);
+            margin: 0;
+        }
+
+        .code-body .comment { color: #3d4f60; font-style: italic; }
+        .code-body .command { color: #8be9fd; }
+        .code-body .flag { color: #ffb86c; }
+        .code-body .string { color: #f1fa8c; }
+
+        /* ===== 表格 ===== */
+        .crypto-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .crypto-table th {
+            text-align: left;
+            padding: 0.8rem 1rem;
+            background: var(--accent-dim);
+            border-bottom: 2px solid var(--accent);
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .crypto-table td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .crypto-table tr:hover td { background: rgba(0, 255, 157, 0.03); }
+
+        /* ===== 提示框 ===== */
+        .warning-box, .info-box {
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .warning-box::before, .info-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent);
+            pointer-events: none;
+        }
+
+        .warning-box {
+            border-left: 4px solid var(--danger);
+            background: rgba(255, 45, 85, 0.06);
+        }
+
+        .warning-box .warning-title {
+            color: var(--danger);
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            text-shadow: 0 0 10px rgba(255,45,85,0.4);
+        }
+
+        .warning-box p { color: var(--fg-muted); font-size: 0.9rem; margin: 0; }
+
+        .info-box {
+            border-left: 4px solid var(--cyan);
+            background: rgba(0, 212, 255, 0.06);
+        }
+
+        .info-box .info-title {
+            color: var(--cyan);
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            text-shadow: 0 0 10px rgba(0,212,255,0.4);
+        }
+
+        .info-box p { color: var(--fg-muted); font-size: 0.9rem; margin: 0; }
+
+        /* ===== 页脚 ===== */
+        .footer {
+            margin-top: 6rem;
+            padding: 3rem 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--fg-muted);
+            font-size: 0.85rem;
+        }
+
+        .footer .brand {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed;
+            bottom: 2rem; right: 2rem;
+            background: var(--card);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            box-shadow: 0 0 30px var(--accent-glow);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10000;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); box-shadow: 5px 0 60px rgba(0, 0, 0, 0.7); }
+            .main-content { margin-left: 0; padding: 2rem 1.5rem; }
+            .hamburger { display: block; }
+        }
+
+        @media (max-width: 640px) {
+            .hero-title { letter-spacing: 4px; }
+            .nav-links { display: none; }
+            .main-content { padding: 1.5rem 1rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+    <div class="scanline-overlay"></div>
+    <div class="crt-flicker"></div>
+    <div class="cursor-glow" id="cursorGlow"></div>
+    <div class="toast" id="toast"></div>
+
+    <nav class="navbar" id="navbar">
+        <a href="#hero" class="nav-brand">Crypto<span>.BOOK</span></a>
+        <ul class="nav-links">
+            <li><a href="#ch1">基础篇</a></li>
+            <li><a href="#ch5">密钥与证书</a></li>
+            <li><a href="#ch8">进阶篇</a></li>
+            <li><a href="#ch13">实战篇</a></li>
+        </ul>
+        <button class="hamburger" id="hamburger" aria-label="打开菜单">☰</button>
+    </nav>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-title">基础篇</div>
+            <a href="#ch1">01 密码学概览</a>
+            <a href="#ch2">02 对称加密体制</a>
+            <a href="#ch3">03 非对称加密体制</a>
+            <a href="#ch4">04 散列函数与完整性</a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-title">密钥与证书</div>
+            <a href="#ch5">05 密钥管理</a>
+            <a href="#ch6">06 公钥基础设施与数字证书</a>
+            <a href="#ch7">07 证书签名与验证</a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-title">进阶篇</div>
+            <a href="#ch8">08 数字签名</a>
+            <a href="#ch9">09 密钥交换协议</a>
+            <a href="#ch10">10 加密通信与TLS</a>
+            <a href="#ch11">11 常见密码分析</a>
+            <a href="#ch12">12 抗量子密码学</a>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-title">实战篇</div>
+            <a href="#ch13">13 密码工具箱</a>
+            <a href="#ch14">14 密码学最佳实践</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <section id="hero" class="chapter visible">
+            <div class="hero-deco">// INITIALIZE CRYPTO PROTOCOL</div>
+            <div class="hero-title" data-text="CRYPTOGRAPHY">CRYPTOGRAPHY</div>
+            <p class="hero-subtitle">一本关于网络安全密码学的数字图书</p>
+            <div class="hero-badge">Rendered in Real-time</div>
+            <a href="#ch1" class="hero-cta">START READING</a>
+        </section>
+
+        <section id="ch1" class="chapter">
+            <div class="chapter-label">CHAPTER 01</div>
+            <h2 class="chapter-title">密码学概览</h2>
+            <p>密码学是研究信息系统安全保密的学科，核心目的在于保证信息的机密性、完整性、认证性和不可否认性。密码算法大小写敏感，密钥空间决定安全性。</p>
+            <h3 class="section-title">密码学核心属性</h3>
+            <ul class="content-list">
+                <li><b>机密性 (Confidentiality)</b> —— <span class="desc">确保信息只能被授权方访问，未被授权者无法理解内容</span></li>
+                <li><b>完整性 (Integrity)</b> —— <span class="desc">确保信息在传输或存储过程中未被未授权篡改</span></li>
+                <li><b>认证性 (Authentication)</b> —— <span class="desc">验证通信方身份的合法性，确认数据来源可信</span></li>
+                <li><b>不可否认性 (Non-repudiation)</b> —— <span class="desc">发送方无法否认其已发送过的信息，接收方无法否认其已接收的信息</span></li>
+            </ul>
+            <h3 class="section-title">柯克霍夫原则</h3>
+            <p>密码系统安全性应只依赖于密钥的保密性，而非算法的保密性。即使算法被完全公开，只要密钥未泄露，系统仍应安全。</p>
+        </section>
+
+        <section id="ch2" class="chapter">
+            <div class="chapter-label">CHAPTER 02</div>
+            <h2 class="chapter-title">对称加密体制</h2>
+            <p>加密和解密使用相同密钥的加密算法，加解密速度快，适合对大批量数据进行加密，但密钥分发面临极大挑战。</p>
+            <h3 class="section-title">两大核心分组模式</h3>
+            <ul class="content-list">
+                <li><b>分组密码</b> —— <span class="desc">将明文分成固定长度的块，逐块加密（如AES, DES）</span></li>
+                <li><b>流密码</b> —— <span class="desc">将密钥扩展为无限伪随机密钥流，逐位加密（如RC4, ChaCha20）</span></li>
+            </ul>
+            <h3 class="section-title">常见分组工作模式</h3>
+            <ul class="content-list">
+                <li><b>ECB</b> 电子密码本模式 —— <span class="desc">相同明文块产生相同密文块，不安全</span></li>
+                <li><b>CBC</b> 密码分组链接模式 —— <span class="desc">每个明文块先与前一个密文块异或再加密，需IV</span></li>
+                <li><b>CTR</b> 计数器模式 —— <span class="desc">将计数器加密后与明文异或，可并行计算</span></li>
+                <li><b>GCM</b> 伽罗瓦/计数器模式 —— <span class="desc">提供机密性与数据完整性的认证加密</span></li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">symmetric-encrypt.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 使用 AES-256-CBC 加密文件</span>
+<span class="command">openssl</span> enc <span class="flag">-aes-256-cbc</span> <span class="flag">-salt</span> <span class="flag">-in</span> plaintext.txt <span class="flag">-out</span> ciphertext.enc <span class="flag">-pass</span> pass:YourSecretKey
+
+<span class="comment"># 使用 AES-256-CBC 解密文件</span>
+<span class="command">openssl</span> enc <span class="flag">-d</span> <span class="flag">-aes-256-cbc</span> <span class="flag">-in</span> ciphertext.enc <span class="flag">-out</span> decrypted.txt <span class="flag">-pass</span> pass:YourSecretKey
+
+<span class="comment"># 使用 ChaCha20 加密（需较新版本OpenSSL）</span>
+<span class="command">openssl</span> enc <span class="flag">-chacha20</span> <span class="flag">-in</span> plaintext.txt <span class="flag">-out</span> chacha.enc <span class="flag">-K</span> [64位十六进制密钥] <span class="flag">-iv</span> [32位十六进制IV]</pre></div>
+            </div>
+            <div class="warning-box">
+                <div class="warning-title">SECURITY ALERT</div>
+                <p>DES 算法密钥长度仅为56位，已可被暴力破解，严禁用于生产环境。ECB模式因无法隐藏数据模式，同样不应使用。</p>
+            </div>
+        </section>
+
+        <section id="ch3" class="chapter">
+            <div class="chapter-label">CHAPTER 03</div>
+            <h2 class="chapter-title">非对称加密体制</h2>
+            <p>加密和解密使用不同的密钥对：公钥公开用于加密或验证，私钥保密用于解密或签名。解决了密钥分发问题，但计算开销远大于对称加密。</p>
+            <h3 class="section-title">核心算法</h3>
+            <ul class="content-list">
+                <li><b>RSA</b> —— <span class="desc">基于大质数分解难题，最广泛使用的非对称算法，推荐密钥长度2048位以上</span></li>
+                <li><b>ECC</b> 椭圆曲线密码学 —— <span class="desc">基于椭圆曲线离散对数难题，256位ECC安全强度等同于3072位RSA</span></li>
+                <li><b>ElGamal</b> —— <span class="desc">基于离散对数难题，常用于数字签名与密钥交换</span></li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">asymmetric-crypto.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 生成RSA 2048位私钥</span>
+<span class="command">openssl</span> genrsa <span class="flag">-out</span> private.pem 2048
+
+<span class="comment"># 从私钥中提取公钥</span>
+<span class="command">openssl</span> rsa <span class="flag">-in</span> private.pem <span class="flag">-pubout</span> <span class="flag">-out</span> public.pem
+
+<span class="comment"># 使用公钥加密文件</span>
+<span class="command">openssl</span> rsautl <span class="flag">-encrypt</span> <span class="flag">-pubin</span> <span class="flag">-inkey</span> public.pem <span class="flag">-in</span> msg.txt <span class="flag">-out</span> msg.enc
+
+<span class="comment"># 使用私钥解密文件</span>
+<span class="command">openssl</span> rsautl <span class="flag">-decrypt</span> <span class="flag">-inkey</span> private.pem <span class="flag">-in</span> msg.enc <span class="flag">-out</span> msg.dec
+
+<span class="comment"># 生成ECC私钥和公钥（prime256v1曲线）</span>
+<span class="command">openssl</span> ecparam <span class="flag">-name</span> prime256v1 <span class="flag">-genkey</span> <span class="flag">-noout</span> <span class="flag">-out</span> ec-private.pem
+<span class="command">openssl</span> ec <span class="flag">-in</span> ec-private.pem <span class="flag">-pubout</span> <span class="flag">-out</span> ec-public.pem</pre></div>
+            </div>
+        </section>
+
+        <section id="ch4" class="chapter">
+            <div class="chapter-label">CHAPTER 04</div>
+            <h2 class="chapter-title">散列函数与完整性</h2>
+            <p>散列函数将任意长度的输入映射为固定长度的输出，具有单向性和抗碰撞性，不使用密钥，用于验证数据完整性。</p>
+            <h3 class="section-title">核心特性</h3>
+            <ul class="content-list">
+                <li><b>单向性</b> —— <span class="desc">从散列值无法逆向推导出原始数据</span></li>
+                <li><b>抗弱碰撞</b> —— <span class="desc">给定一个输入，无法找到另一个输入产生相同的散列值</span></li>
+                <li><b>抗强碰撞</b> —— <span class="desc">无法找到任意两个不同输入产生相同的散列值</span></li>
+                <li><b>雪崩效应</b> —— <span class="desc">输入的微小变化导致散列值发生巨大变化</span></li>
+            </ul>
+            <h3 class="section-title">常见散列算法对比</h3>
+            <table class="crypto-table">
+                <thead><tr><th>算法</th><th>输出长度</th><th>安全状态</th><th>典型应用</th></tr></thead>
+                <tbody>
+                    <tr><td>MD5</td><td>128 bit</td><td style="color: var(--danger);">已破解</td><td>仅用于校验，非安全场景</td></tr>
+                    <tr><td>SHA-1</td><td>160 bit</td><td style="color: var(--warning);">不推荐</td><td>遗留系统</td></tr>
+                    <tr><td>SHA-256</td><td>256 bit</td><td style="color: var(--accent);">安全</td><td>TLS, 数字签名, 区块链</td></tr>
+                    <tr><td>SHA-3</td><td>可变</td><td style="color: var(--accent);">安全</td><td>新一代标准，海绵结构</td></tr>
+                </tbody>
+            </table>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">hash-examples.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 计算文件的 SHA-256 散列值</span>
+<span class="command">sha256sum</span> filename.txt
+
+<span class="comment"># 计算字符串的 MD5 散列值</span>
+<span class="command">echo</span> <span class="flag">-n</span> <span class="string">"password"</span> | <span class="command">md5sum</span>
+
+<span class="comment"># 使用 OpenSSL 计算 SHA-512</span>
+<span class="command">echo</span> <span class="flag">-n</span> <span class="string">"data"</span> | <span class="command">openssl</span> dgst <span class="flag">-sha512</span>
+
+<span class="comment"># HMAC 带密钥的散列</span>
+<span class="command">echo</span> <span class="flag">-n</span> <span class="string">"message"</span> | <span class="command">openssl</span> dgst <span class="flag">-sha256</span> <span class="flag">-hmac</span> <span class="string">"secret_key"</span></pre></div>
+            </div>
+            <div class="info-box">
+                <div class="info-title">HMAC</div>
+                <p>Hash-based Message Authentication Code，使用密钥与散列函数组合，既验证数据完整性又验证消息来源的真实性。</p>
+            </div>
+        </section>
+
+        <section id="ch5" class="chapter">
+            <div class="chapter-label">CHAPTER 05</div>
+            <h2 class="chapter-title">密钥管理</h2>
+            <p>密钥是密码系统的核心资产，密钥管理的安全性直接决定整个系统的安全性。涵盖密钥生成、分发、存储、更新、撤销与销毁全生命周期。</p>
+            <h3 class="section-title">密钥生命周期</h3>
+            <ul class="content-list">
+                <li><b>生成</b> —— <span class="desc">使用安全随机数生成器(CSPRNG)生成，避免伪随机</span></li>
+                <li><b>分发</b> —— <span class="desc">通过安全信道或密钥交换协议传递密钥</span></li>
+                <li><b>存储</b> —— <span class="desc">使用硬件安全模块(HSM)或密钥管理系统(KMS)保护</span></li>
+                <li><b>轮换</b> —— <span class="desc">定期更新密钥，降低密钥泄露影响</span></li>
+                <li><b>撤销与销毁</b> —— <span class="desc">安全擦除密钥数据，确保不可恢复</span></li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">keygen.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 生成高质量随机密码/密钥（十六进制）</span>
+<span class="command">openssl</span> rand <span class="flag">-hex</span> 32
+
+<span class="comment"># 生成 Base64 编码的随机密钥</span>
+<span class="command">openssl</span> rand <span class="flag">-base64</span> 32
+
+<span class="comment"># 从 /dev/urandom 读取随机字节</span>
+<span class="command">head</span> <span class="flag">-c</span> 32 /dev/urandom | <span class="command">xxd</span> <span class="flag">-p</span>
+
+<span class="comment"># 使用 SSH 密钥对（Ed25519，推荐）</span>
+<span class="command">ssh-keygen</span> <span class="flag">-t</span> ed25519 <span class="flag">-C</span> <span class="string">"user@host"</span> <span class="flag">-f</span> ~/.ssh/id_ed25519
+
+<span class="comment"># 使用 SSH 密钥对（RSA，兼容性更好）</span>
+<span class="command">ssh-keygen</span> <span class="flag">-t</span> rsa <span class="flag">-b</span> 4096 <span class="flag">-C</span> <span class="string">"user@host"</span></pre></div>
+            </div>
+        </section>
+
+        <section id="ch6" class="chapter">
+            <div class="chapter-label">CHAPTER 06</div>
+            <h2 class="chapter-title">公钥基础设施与数字证书</h2>
+            <p>PKI 是创建、管理、分发、使用、存储和撤销数字证书以及管理公钥加密所需的一组角色、策略、硬件、软件和过程的集合。</p>
+            <h3 class="section-title">核心组件</h3>
+            <ul class="content-list">
+                <li><b>CA</b> 证书颁发机构 —— <span class="desc">可信第三方，签发与管理数字证书</span></li>
+                <li><b>RA</b> 注册机构 —— <span class="desc">验证证书申请者身份，代理CA处理申请</span></li>
+                <li><b>证书库</b> —— <span class="desc">存储已签发证书的公开数据库，供查询下载</span></li>
+                <li><b>CRL</b> 证书撤销列表 —— <span class="desc">列出已被撤销的证书序列号</span></li>
+                <li><b>OCSP</b> 在线证书状态协议 —— <span class="desc">实时查询证书是否被撤销</span></li>
+            </ul>
+            <h3 class="section-title">X.509 证书结构</h3>
+            <table class="crypto-table">
+                <thead><tr><th>字段</th><th>说明</th></tr></thead>
+                <tbody>
+                    <tr><td>Version</td><td>证书版本号（通常v3）</td></tr>
+                    <tr><td>Serial Number</td><td>CA分配的唯一序列号</td></tr>
+                    <tr><td>Issuer</td><td>签发此证书的CA信息</td></tr>
+                    <tr><td>Validity</td><td>证书有效期（Not Before / Not After）</td></tr>
+                    <tr><td>Subject</td><td>证书持有者信息</td></tr>
+                    <tr><td>Public Key</td><td>持有者的公钥及算法</td></tr>
+                    <tr><td>Signature</td><td>CA对证书的数字签名</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="ch7" class="chapter">
+            <div class="chapter-label">CHAPTER 07</div>
+            <h2 class="chapter-title">证书签名与验证</h2>
+            <p>数字证书由CA签发，通过CA的私钥签名来保证证书的真实性和不可篡改性。</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">cert-ops.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 生成自签名证书（测试用）</span>
+<span class="command">openssl</span> req <span class="flag">-x509</span> <span class="flag">-newkey</span> rsa:2048 <span class="flag">-keyout</span> key.pem <span class="flag">-out</span> cert.pem <span class="flag">-days</span> 365 <span class="flag">-nodes</span>
+
+<span class="comment"># 生成证书签名请求(CSR)</span>
+<span class="command">openssl</span> req <span class="flag">-newkey</span> rsa:2048 <span class="flag">-keyout</span> server.key <span class="flag">-out</span> server.csr
+
+<span class="comment"># 使用CA私钥签发证书</span>
+<span class="command">openssl</span> x509 <span class="flag">-req</span> <span class="flag">-in</span> server.csr <span class="flag">-CA</span> ca.crt <span class="flag">-CAkey</span> ca.key <span class="flag">-CAcreateserial</span> <span class="flag">-out</span> server.crt <span class="flag">-days</span> 365 <span class="flag">-sha256</span>
+
+<span class="comment"># 验证证书链</span>
+<span class="command">openssl</span> verify <span class="flag">-CAfile</span> ca.crt server.crt
+
+<span class="comment"># 查看证书详情</span>
+<span class="command">openssl</span> x509 <span class="flag">-in</span> cert.pem <span class="flag">-text</span> <span class="flag">-noout</span>
+
+<span class="comment"># 检查证书是否过期</span>
+<span class="command">echo</span> | <span class="command">openssl</span> s_client <span class="flag">-connect</span> example.com:443 2>/dev/null | <span class="command">openssl</span> x509 <span class="flag">-noout</span> <span class="flag">-dates</span></pre></div>
+            </div>
+        </section>
+
+        <section id="ch8" class="chapter">
+            <div class="chapter-label">CHAPTER 08</div>
+            <h2 class="chapter-title">数字签名</h2>
+            <p>数字签名是发送者用自己的私钥对消息散列值进行签名，接收者用发送者的公钥验证。确保了消息的完整性、认证性和不可否认性。</p>
+            <h3 class="section-title">签名流程</h3>
+            <ul class="content-list">
+                <li><b>签名</b> —— <span class="desc">发送者计算消息散列值 → 用私钥加密散列值 → 生成数字签名</span></li>
+                <li><b>验证</b> —— <span class="desc">接收者用发送者公钥解密签名 → 计算收到消息的散列值 → 比较两者是否一致</span></li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">digital-signature.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 使用RSA私钥对文件签名（SHA-256）</span>
+<span class="command">openssl</span> dgst <span class="flag">-sha256</span> <span class="flag">-sign</span> private.pem <span class="flag">-out</span> document.sig document.txt
+
+<span class="comment"># 使用RSA公钥验证签名</span>
+<span class="command">openssl</span> dgst <span class="flag">-sha256</span> <span class="flag">-verify</span> public.pem <span class="flag">-signature</span> document.sig document.txt
+
+<span class="comment"># 签名并分离签名文件</span>
+<span class="command">openssl</span> cms <span class="flag">-sign</span> <span class="flag">-in</span> message.txt <span class="flag">-signer</span> signer.crt <span class="flag">-inkey</span> signer.key <span class="flag">-outform</span> DER <span class="flag">-out</span> message.p7b
+
+<span class="comment"># GPG 签名与验证</span>
+<span class="command">gpg</span> <span class="flag">--sign</span> document.txt          <span class="comment"># 生成 document.txt.gpg</span>
+<span class="command">gpg</span> <span class="flag">--verify</span> document.txt.gpg <span class="comment"># 验证签名</span>
+<span class="command">gpg</span> <span class="flag">--clearsign</span> document.txt  <span class="comment"># 生成可读的签名文档</span></pre></div>
+            </div>
+        </section>
+
+        <section id="ch9" class="chapter">
+            <div class="chapter-label">CHAPTER 09</div>
+            <h2 class="chapter-title">密钥交换协议</h2>
+            <p>在不安全的信道上安全地协商出共享密钥的协议，使通信双方无需事先共享秘密即可建立加密通信。</p>
+            <h3 class="section-title">Diffie-Hellman (DH) 密钥交换</h3>
+            <ul class="content-list">
+                <li><b>基本原理</b> —— <span class="desc">基于离散对数难题，双方各自生成私钥，交换公钥参数后计算出相同的共享密钥</span></li>
+                <li><b>ECDH</b> —— <span class="desc">椭圆曲线版DH，更短密钥达到同等安全强度，性能更优</span></li>
+            </ul>
+            <div class="info-box">
+                <div class="info-title">前向保密 (Forward Secrecy)</div>
+                <p>如果长期密钥泄露，过去的会话密钥不会被推导出来。通过临时密钥交换(DHE/ECDHE)实现，每次会话使用不同的临时密钥对。</p>
+            </div>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">key-exchange.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 生成 DH 参数（2048位）</span>
+<span class="command">openssl</span> dhparam <span class="flag">-out</span> dhparam.pem 2048
+
+<span class="comment"># 生成 ECDH 密钥对</span>
+<span class="command">openssl</span> ecparam <span class="flag">-name</span> prime256v1 <span class="flag">-genkey</span> <span class="flag">-noout</span> <span class="flag">-out</span> ecdh_key.pem
+
+<span class="comment"># 查看支持的椭圆曲线</span>
+<span class="command">openssl</span> ecparam <span class="flag">-list_curves</span></pre></div>
+            </div>
+        </section>
+
+        <section id="ch10" class="chapter">
+            <div class="chapter-label">CHAPTER 10</div>
+            <h2 class="chapter-title">加密通信与TLS</h2>
+            <p>Transport Layer Security 是互联网安全通信的基石，在传输层提供加密、身份验证和完整性保护。HTTPS 即 HTTP over TLS。</p>
+            <h3 class="section-title">TLS 1.3 握手流程</h3>
+            <ul class="content-list">
+                <li><b>ClientHello</b> —— <span class="desc">客户端发送支持的密码套件列表、密钥共享(DH公钥)和随机数</span></li>
+                <li><b>ServerHello</b> —— <span class="desc">服务器选择密码套件，发送DH公钥、随机数和证书</span></li>
+                <li><b>验证与密钥计算</b> —— <span class="desc">双方基于DH交换计算共享密钥，客户端验证服务器证书</span></li>
+                <li><b>加密通信</b> —— <span class="desc">仅1-RTT即可开始应用数据传输，支持0-RTT恢复</span></li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">tls-tools.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 查看网站证书信息与TLS版本</span>
+<span class="command">openssl</span> s_client <span class="flag">-connect</span> example.com:443 <span class="flag">-tls1_3</span>
+
+<span class="comment"># 检查服务器支持的TLS协议版本</span>
+<span class="command">nmap</span> <span class="flag">--script</span> ssl-enum-ciphers <span class="flag">-p</span> 443 example.com
+
+<span class="comment"># 使用 curl 测试TLS连接详情</span>
+<span class="command">curl</span> <span class="flag">-vI</span> https://example.com 2>&1 | <span class="command">grep</span> <span class="string">"SSL connection"</span>
+
+<span class="comment"># 使用 testssl.sh 全面评估TLS配置</span>
+<span class="command">./testssl.sh</span> example.com</pre></div>
+            </div>
+            <div class="warning-box">
+                <div class="warning-title">SECURITY ALERT</div>
+                <p>TLS 1.0 和 TLS 1.1 已被正式废弃。SSL 3.0 及更早版本存在严重安全漏洞（如 POODLE），严禁使用。生产环境应仅启用 TLS 1.2 和 TLS 1.3。</p>
+            </div>
+        </section>
+
+        <section id="ch11" class="chapter">
+            <div class="chapter-label">CHAPTER 11</div>
+            <h2 class="chapter-title">常见密码分析</h2>
+            <p>密码分析是研究破解密码系统的方法论，了解攻击手段有助于设计更安全的系统。</p>
+            <h3 class="section-title">攻击类型分类</h3>
+            <ul class="content-list">
+                <li><b>唯密文攻击</b> —— <span class="desc">攻击者仅拥有密文，难度最大</span></li>
+                <li><b>已知明文攻击</b> —— <span class="desc">攻击者拥有部分明文-密文对</span></li>
+                <li><b>选择明文攻击</b> —— <span class="desc">攻击者可选择任意明文获取对应密文</span></li>
+                <li><b>选择密文攻击</b> —— <span class="desc">攻击者可选择任意密文获取对应明文，最强攻击模型</span></li>
+            </ul>
+            <h3 class="section-title">经典攻击手段</h3>
+            <ul class="content-list">
+                <li><b>暴力破解</b> —— <span class="desc">遍历整个密钥空间，复杂度取决于密钥长度</span></li>
+                <li><b>字典攻击</b> —— <span class="desc">使用常见密码/密钥列表进行尝试</span></li>
+                <li><b>彩虹表</b> —— <span class="desc">预计算散列链表，用空间换时间破解散列</span></li>
+                <li><b>侧信道攻击</b> —— <span class="desc">利用时间消耗、功耗、电磁泄漏等物理信息推断密钥</span></li>
+                <li><b>填充神谕攻击</b> —— <span class="desc">利用CBC模式填充验证错误消息反馈逐字节解密</span></li>
+            </ul>
+            <div class="info-box">
+                <div class="info-title">加盐 (Salt)</div>
+                <p>在散列计算前加入随机值（盐），使得相同密码产生不同散列值，有效抵御彩虹表攻击。盐值应足够长且每个用户独立。</p>
+            </div>
+        </section>
+
+        <section id="ch12" class="chapter">
+            <div class="chapter-label">CHAPTER 12</div>
+            <h2 class="chapter-title">抗量子密码学</h2>
+            <p>量子计算机运行 Shor 算法可在多项式时间内分解大整数和计算离散对数，将威胁RSA、ECC等现有非对称加密体系。抗量子密码学(PQC)旨在抵御量子计算攻击。</p>
+            <h3 class="section-title">NIST PQC 标准化算法</h3>
+            <table class="crypto-table">
+                <thead><tr><th>算法</th><th>类别</th><th>数学基础</th><th>用途</th></tr></thead>
+                <tbody>
+                    <tr><td>CRYSTALS-Kyber</td><td>KEM</td><td>格密码</td><td>密钥封装</td></tr>
+                    <tr><td>CRYSTALS-Dilithium</td><td>签名</td><td>格密码</td><td>数字签名</td></tr>
+                    <tr><td>FALCON</td><td>签名</td><td>NTRU格</td><td>数字签名（紧凑）</td></tr>
+                    <tr><td>SPHINCS+</td><td>签名</td><td>散列</td><td>无状态签名</td></tr>
+                </tbody>
+            </table>
+            <div class="warning-box">
+                <div class="warning-title">Harvest Now, Decrypt Later</div>
+                <p>攻击者可能现在截获并存储加密数据，等待未来量子计算机成熟后再解密。涉及长期机密性的数据应立即考虑迁移至PQC方案。</p>
+            </div>
+        </section>
+
+        <section id="ch13" class="chapter">
+            <div class="chapter-label">CHAPTER 13</div>
+            <h2 class="chapter-title">密码工具箱</h2>
+            <p>实际安全工作中常用密码学工具的快速参考。</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">crypto-toolkit.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># ===== OpenSSL 综合工具 =====</span>
+
+<span class="comment"># 查看PEM编码证书内容</span>
+<span class="command">openssl</span> x509 <span class="flag">-in</span> cert.pem <span class="flag">-text</span> <span class="flag">-noout</span>
+
+<span class="comment"># PEM 转 DER 格式</span>
+<span class="command">openssl</span> x509 <span class="flag">-in</span> cert.pem <span class="flag">-outform</span> DER <span class="flag">-out</span> cert.der
+
+<span class="comment"># 提取证书中的公钥</span>
+<span class="command">openssl</span> x509 <span class="flag">-pubkey</span> <span class="flag">-noout</span> <span class="flag">-in</span> cert.pem <span class="flag">-out</span> pubkey.pem
+
+<span class="comment"># ===== GPG 加密与签名 =====</span>
+
+<span class="comment"># 加密文件（指定接收者公钥）</span>
+<span class="command">gpg</span> <span class="flag">--encrypt</span> <span class="flag">--recipient</span> user@email.com file.txt
+
+<span class="comment"># 解密文件</span>
+<span class="command">gpg</span> <span class="flag">--output</span> file.txt <span class="flag">--decrypt</span> file.txt.gpg
+
+<span class="comment"># 对称加密（使用密码）</span>
+<span class="command">gpg</span> <span class="flag">--symmetric</span> file.txt
+
+<span class="comment"># ===== 密码哈希生成 =====</span>
+
+<span class="comment"># 使用 bcrypt（Python）</span>
+<span class="command">python3</span> <span class="flag">-c</span> <span class="string">"import bcrypt; print(bcrypt.hashpw(b'password', bcrypt.gensalt()))"</span>
+
+<span class="comment"># 使用 mkpasswd</span>
+<span class="command">mkpasswd</span> <span class="flag">-m</span> sha-512 <span class="flag">-S</span> <span class="string">"saltsalt"</span> <span class="string">"password"</span></pre></div>
+            </div>
+        </section>
+
+        <section id="ch14" class="chapter">
+            <div class="chapter-label">CHAPTER 14</div>
+            <h2 class="chapter-title">密码学最佳实践</h2>
+            <p>安全不仅仅是选择算法，更在于正确地使用和实施。以下是密码学工程实践中的核心原则。</p>
+            <h3 class="section-title">黄金法则</h3>
+            <ul class="content-list">
+                <li><b>不要自己发明密码算法</b> —— <span class="desc">使用经过广泛审查的标准算法和库</span></li>
+                <li><b>不要复用密钥和IV</b> —— <span class="desc">相同密钥必须搭配不同的初始化向量</span></li>
+                <li><b>优先选择认证加密(AEAD)</b> —— <span class="desc">如 AES-GCM, ChaCha20-Poly1305，同时保障机密性与完整性</span></li>
+                <li><b>密钥必须安全存储</b> —— <span class="desc">使用HSM、KMS或系统密钥链，禁止硬编码</span></li>
+                <li><b>安全随机数是根基</b> —— <span class="desc">使用 /dev/urandom 或密码学安全PRNG，不要用 random()</span></li>
+                <li><b>持续更新与轮换</b> —— <span class="desc">关注算法安全动态，及时升级密钥长度和算法版本</span></li>
+                <li><b>防御纵深</b> —— <span class="desc">不依赖单一安全机制，多层防护</span></li>
+            </ul>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-filename">best-practices.sh</span>
+                    <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+                </div>
+                <div class="code-body"><pre><span class="comment"># 密码存储最佳实践：使用 Argon2 / bcrypt / scrypt</span>
+
+<span class="comment"># Python - Argon2 (推荐)</span>
+<span class="command">pip</span> install argon2-cffi
+<span class="command">python3</span> <span class="flag">-c</span> <span class="string">"from argon2 import PasswordHasher; ph = PasswordHasher(); print(ph.hash('password'))"</span>
+
+<span class="comment"># Python - bcrypt</span>
+<span class="command">pip</span> install bcrypt
+<span class="command">python3</span> <span class="flag">-c</span> <span class="string">"import bcrypt; print(bcrypt.hashpw(b'password', bcrypt.gensalt(12)))"</span>
+
+<span class="comment"># 密码学安全随机数</span>
+<span class="command">dd</span> <span class="flag">if</span>=/dev/urandom <span class="flag">bs</span>=32 <span class="flag">count</span>=1 <span class="flag">of</span>=random_key.bin 2>/dev/null
+
+<span class="comment"># 安全擦除敏感文件（覆写后删除）</span>
+<span class="command">shred</span> <span class="flag">-vfz</span> <span class="flag">-n</span> 3 sensitive_key.pem</pre></div>
+            </div>
+            <div class="info-box">
+                <div class="info-title">未完待续</div>
+                <p>密码学是不断演进的领域，新的威胁与解决方案持续涌现。保持学习，关注 NIST、IETF 等标准组织的最新动态，是安全从业者的必修课。</p>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <span class="brand">Crypto.BOOK</span> - Secrecy is Power. Read for Open.
+            <br>&copy; 2026 Crypto.BOOK
+        </footer>
+    </main>
+
+    <script>
+        // ===== 粒子网格系统 =====
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: -9999, y: -9999 };
+        const PARTICLE_COUNT = 120;
+        const CONNECTION_DIST = 150;
+        const MOUSE_DIST = 200;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 跟踪鼠标位置
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            // 同步更新鼠标光效
+            const glow = document.getElementById('cursorGlow');
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+        });
+
+        // 粒子类
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.4;
+                this.vy = (Math.random() - 0.5) * 0.4;
+                this.radius = Math.random() * 1.5 + 0.5;
+                this.baseAlpha = Math.random() * 0.5 + 0.2;
+                this.alpha = this.baseAlpha;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 边界反弹
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+
+                // 鼠标交互：被吸引
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < MOUSE_DIST) {
+                    const force = (MOUSE_DIST - dist) / MOUSE_DIST * 0.02;
+                    this.vx += dx * force;
+                    this.vy += dy * force;
+                    this.alpha = this.baseAlpha + (1 - dist / MOUSE_DIST) * 0.5;
+                } else {
+                    this.alpha += (this.baseAlpha - this.alpha) * 0.05;
+                }
+
+                // 速度阻尼
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, Math.max(0.1, this.radius), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 157, ${this.alpha})`;
+                ctx.fill();
+            }
+        }
+
+        // 初始化粒子
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 更新和绘制粒子
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // 绘制粒子间连线
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        const alpha = (1 - dist / CONNECTION_DIST) * 0.15;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(0, 255, 157, ${alpha})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // 鼠标与粒子连线
+            particles.forEach(p => {
+                const dx = mouse.x - p.x;
+                const dy = mouse.y - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < MOUSE_DIST) {
+                    const alpha = (1 - dist / MOUSE_DIST) * 0.3;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    ctx.strokeStyle = `rgba(0, 255, 157, ${alpha})`;
+                    ctx.lineWidth = 0.8;
+                    ctx.stroke();
+                }
+            });
+
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        // ===== 滚动动画观察器 =====
+        const chapters = document.querySelectorAll('.chapter');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.08 });
+
+        chapters.forEach(ch => observer.observe(ch));
+
+        // ===== 导航栏滚动效果 =====
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // ===== 侧边栏激活状态跟踪 =====
+        const sidebarLinks = document.querySelectorAll('.sidebar a');
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    sidebarLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+                    });
+                }
+            });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+
+        chapters.forEach(ch => {
+            if (ch.id && ch.id !== 'hero') sectionObserver.observe(ch);
+        });
+
+        // ===== 移动端汉堡菜单 =====
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        hamburger.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) sidebar.classList.remove('open');
+            });
+        });
+
+        document.querySelector('.main-content').addEventListener('click', () => {
+            if (window.innerWidth <= 1024 && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // ===== 复制代码功能 =====
+        function copyCode(btn) {
+            const codeBody = btn.closest('.code-block').querySelector('.code-body pre');
+            navigator.clipboard.writeText(codeBody.textContent).then(() => {
+                showToast('[OK] 代码已复制到剪贴板');
+                btn.textContent = 'COPIED';
+                setTimeout(() => { btn.textContent = 'COPY'; }, 2000);
+            }).catch(() => {
+                showToast('[ERR] 复制失败');
+            });
+        }
+
+        // ===== Toast 通知 =====
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+</html>
